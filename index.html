@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topologi Jaringan</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#07101f;--bg2:#0b1628;--bg3:#0f1e36;
+  --blue:#3a8fff;--blue2:#1a5fb4;--blue3:#0d3060;
+  --accent:#00d4ff;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --text:#ddeaff;--text2:#7a90b8;--text3:#3a4e6e;
+  --border:#142240;--border2:#1e3358;
+  --card:#0c1a2e;--card2:#102035;
+  --radius:10px;--radius2:7px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;gap:14px;z-index:200;flex-shrink:0}
+.hd-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--accent));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hd-title{font-size:17px;font-weight:700;color:var(--text)}
+.hd-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.hd-badge{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:4px 12px;font-size:11px;color:var(--text2);white-space:nowrap;margin-left:auto}
+.hd-badge b{color:var(--accent);font-weight:600}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:190px;min-width:190px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sb-head{padding:14px 14px 10px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.3px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.sb-head::after{content:'';flex:1;height:1px;background:var(--border2);}
+.sb-list{flex:1;overflow-y:auto;padding:0 8px 12px}
+.topo-btn{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:10px 12px;border-radius:var(--radius2);
+  border:1px solid transparent;
+  background:var(--card2);
+  color:var(--text2);font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .18s;text-align:left;margin-bottom:5px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  position:relative;overflow:hidden;
+}
+.topo-btn::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:transparent;border-radius:3px 0 0 3px;transition:background .18s;
+}
+.topo-btn:hover{
+  background:var(--bg3);color:var(--text);
+  border-color:var(--border2);
+  transform:translateX(2px);
+}
+.topo-btn.active{
+  background:linear-gradient(90deg,var(--blue3) 0%,rgba(13,48,96,0.7) 100%);
+  color:var(--accent);border:1px solid var(--blue2);font-weight:600;
+  box-shadow:0 2px 8px rgba(58,143,255,0.18);
+  transform:translateX(0);
+}
+.topo-btn.active::before{background:var(--accent);}
+.topo-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor;}
+.sb-footer{padding:12px;border-top:1px solid var(--border)}
+.sb-teacher .name{font-size:11px;color:var(--accent);font-weight:600}
+.sb-teacher .role{font-size:11px;color:var(--text3);margin-top:1px}
+.left-panel{width:40%;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+.tab-bar{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;padding:8px 12px;gap:6px;flex-shrink:0}
+.tab-item{
+  padding:7px 16px;font-size:12px;font-weight:500;color:var(--text2);
+  cursor:pointer;border-radius:var(--radius2);
+  border:1px solid var(--border2);
+  background:var(--card2);
+  transition:all .18s;display:flex;align-items:center;gap:6px;white-space:nowrap;
+  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+.tab-item:hover{background:var(--bg3);color:var(--text);border-color:var(--blue2);}
+.tab-item.active{
+  background:linear-gradient(135deg,var(--blue3),rgba(13,48,96,0.8));
+  color:var(--accent);border-color:var(--blue2);font-weight:600;
+  box-shadow:0 2px 8px rgba(58,143,255,0.2);
+}
+.content{flex:1;overflow-y:auto;padding:20px 18px}
+.panel{display:none}.panel.active{display:block}
+.right-panel{flex:1;display:flex;flex-direction:column;background:#060d1a;overflow:hidden;position:relative}
+.rp-head{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.rp-title{font-size:13px;font-weight:600;color:var(--text)}
+.status-bar{display:flex;gap:8px;align-items:center}
+.stat-pill{background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:3px 10px;font-size:11px;display:flex;align-items:center;gap:5px}
+.stat-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.stat-dot.red{background:var(--red)}
+.rp-hint{font-size:10px;color:var(--text3)}
+#three-wrap{flex:1;position:relative;overflow:hidden}
+#three-wrap canvas{display:block;width:100%!important;height:100%!important;cursor:grab}
+#three-wrap canvas:active{cursor:grabbing}
+#node-popup{position:absolute;display:none;background:rgba(6,13,26,0.96);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 15px;pointer-events:none;backdrop-filter:blur(10px);min-width:170px;max-width:210px;z-index:50}
+.np-name{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px}
+.np-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:4px;font-size:11px}
+.np-key{color:var(--text3)}.np-val{color:var(--text2);font-weight:500}
+.np-status{margin-top:8px;padding:4px 10px;border-radius:10px;font-size:10px;font-weight:600;text-align:center}
+.np-status.ok{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.np-status.fail{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.mode-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mode-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-right:4px}
+.mode-btn{
+  padding:5px 14px;border-radius:14px;
+  border:1px solid var(--border2);
+  background:var(--card2);
+  color:var(--text2);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .18s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+.mode-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--blue2);}
+.mode-btn.active{
+  background:linear-gradient(135deg,var(--blue3),rgba(13,48,96,0.8));
+  color:var(--accent);border-color:var(--blue2);font-weight:600;
+  box-shadow:0 2px 6px rgba(58,143,255,0.2);
+}
+.mode-hint{font-size:10px;color:var(--text3);margin-left:auto}
+.sim-nav{background:var(--bg2);border-top:1px solid var(--border);padding:7px 12px;display:flex;gap:7px;flex-wrap:wrap;flex-shrink:0;align-items:center}
+.sim-btn{
+  padding:6px 14px;border-radius:14px;
+  border:1px solid var(--border2);
+  background:var(--card2);
+  color:var(--text2);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .18s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.25);
+}
+.sim-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--blue2);box-shadow:0 2px 8px rgba(58,143,255,0.15);transform:translateY(-1px);}
+.sim-btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,0.2);}
+.sim-btn.active{background:linear-gradient(135deg,var(--blue3),rgba(13,48,96,0.8));color:var(--accent);border-color:var(--blue2);box-shadow:0 2px 8px rgba(58,143,255,0.2);}
+.sim-btn.danger{border-color:rgba(239,68,68,.35);color:#f87171;background:rgba(239,68,68,.08);}
+.sim-btn.danger:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.6);box-shadow:0 2px 8px rgba(239,68,68,.2);transform:translateY(-1px);}
+.sim-btn.danger.active{background:rgba(239,68,68,.22);border-color:var(--red);}
+.sim-btn:disabled{opacity:.35;cursor:default;transform:none;}
+.pkt-counter{margin-left:auto;font-size:11px;color:var(--text3)}
+.pkt-counter b{color:var(--accent)}
+.sim-log{background:rgba(6,13,26,0.9);border-top:1px solid var(--border);padding:6px 14px;font-size:11px;color:var(--text2);min-height:28px;flex-shrink:0}
+.sel-hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.35);border-radius:16px;padding:5px 14px;font-size:11px;color:var(--accent);pointer-events:none;z-index:30;white-space:nowrap;display:none}
+/* LEFT */
+.sec-head{margin-bottom:16px}
+.sec-head h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sec-head p{font-size:12px;color:var(--text2)}
+.topo-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.6px;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:11px}
+.card h3{font-size:12px;font-weight:600;color:var(--text);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.tujuan-list{display:flex;flex-direction:column;gap:7px}
+.tujuan-item{display:flex;gap:9px;align-items:flex-start;background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius2);padding:9px 11px}
+.tujuan-num{width:22px;height:22px;border-radius:50%;background:var(--blue3);border:1px solid var(--blue2);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tujuan-text{font-size:12px;color:var(--text2);line-height:1.55}
+.materi-desc{font-size:12px;color:var(--text2);line-height:1.8;padding:11px;background:var(--card2);border-radius:var(--radius2);border-left:3px solid var(--blue);margin-bottom:11px}
+.badge-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.badge{padding:3px 10px;border-radius:14px;font-size:11px;font-weight:500}
+.badge.good{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge.bad{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.badge.info{background:rgba(58,143,255,.1);color:var(--blue);border:1px solid rgba(58,143,255,.2)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+.info-box{background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius2);padding:9px;text-align:center}
+.ib-label{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.7px}
+.ib-val{font-size:12px;font-weight:600;color:var(--text)}
+.ib-val.g{color:var(--green)}.ib-val.r{color:var(--red)}
+.kuis-progress{display:flex;gap:5px;margin-bottom:14px}
+.kuis-dot{height:4px;flex:1;border-radius:2px;background:var(--border2);transition:background .3s}
+.kuis-dot.done{background:var(--green)}.kuis-dot.current{background:var(--accent)}
+.kuis-q{font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px;line-height:1.6}
+.qnum{display:inline-flex;width:21px;height:21px;border-radius:50%;background:var(--blue3);color:var(--accent);font-size:10px;font-weight:700;align-items:center;justify-content:center;margin-right:6px}
+.kuis-opts{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.kuis-opt{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--radius2);border:1px solid var(--border2);background:var(--card2);cursor:pointer;transition:all .18s;font-size:12px;color:var(--text2)}
+.kuis-opt:hover:not(.disabled){background:var(--bg3);color:var(--text)}
+.kuis-opt.selected{border-color:var(--blue);background:rgba(58,143,255,.1);color:var(--text)}
+.kuis-opt.correct{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green)}
+.kuis-opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1);color:var(--red)}
+.kuis-opt.disabled{cursor:default}
+.opt-letter{width:20px;height:20px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kuis-fb{padding:9px 12px;border-radius:var(--radius2);font-size:11px;margin-bottom:11px;display:none;line-height:1.6}
+.kuis-fb.show{display:block}
+.kuis-fb.correct{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green)}
+.kuis-fb.wrong{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
+.kuis-btns{display:flex;gap:7px}
+.kbtn{padding:8px 18px;border-radius:14px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.kbtn.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:1px solid var(--blue2);}
+.kbtn.primary:hover{background:linear-gradient(135deg,#4a9fff,var(--blue));box-shadow:0 3px 10px rgba(58,143,255,0.3);transform:translateY(-1px);}
+.kbtn.primary:active{transform:translateY(0);}
+.kbtn.primary:disabled{opacity:.4;cursor:default;transform:none;}
+.kbtn.secondary{background:var(--card2);color:var(--text2);border:1px solid var(--border2);}
+.kbtn.secondary:hover{background:var(--bg3);color:var(--text);border-color:var(--blue2);transform:translateY(-1px);}
+.kbtn.secondary:active{transform:translateY(0);}
+.kuis-result{text-align:center;padding:24px 0}
+.kuis-score{font-size:50px;font-weight:700;margin-bottom:6px}
+.kuis-score.great{color:var(--green)}.kuis-score.ok{color:var(--amber)}.kuis-score.poor{color:var(--red)}
+.kuis-result p{font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-icon">🌐</div>
+  <div><div class="hd-title">Topologi Jaringan</div><div class="hd-sub">Media Pembelajaran Interaktif Berbasis Simulasi 3D</div></div>
+  <div class="hd-badge"><b>Erik Tomba Gurusinga, S.Kom</b> &nbsp;·&nbsp; Kelas X SMA</div>
+</header>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">Jenis Topologi</div>
+    <div class="sb-list">
+      <button class="topo-btn active" onclick="setTopo('star')" id="btn-star"><span class="topo-dot" style="background:#3a8fff"></span>Star / Bintang</button>
+      <button class="topo-btn" onclick="setTopo('bus')" id="btn-bus"><span class="topo-dot" style="background:#22c55e"></span>Bus</button>
+      <button class="topo-btn" onclick="setTopo('ring')" id="btn-ring"><span class="topo-dot" style="background:#a855f7"></span>Ring / Cincin</button>
+      <button class="topo-btn" onclick="setTopo('mesh')" id="btn-mesh"><span class="topo-dot" style="background:#ef4444"></span>Mesh</button>
+      <button class="topo-btn" onclick="setTopo('tree')" id="btn-tree"><span class="topo-dot" style="background:#f59e0b"></span>Tree / Pohon</button>
+    </div>
+    <div class="sb-footer"><div class="sb-teacher"><div class="name">Erik Tomba Gurusinga, S.Kom</div><div class="role">Guru Informatika · Kelas X SMA</div></div></div>
+  </aside>
+  <div class="left-panel">
+    <nav class="tab-bar">
+      <div class="tab-item active" onclick="setTab('tujuan',this)">🎯 Tujuan</div>
+      <div class="tab-item" onclick="setTab('materi',this)">📖 Materi</div>
+      <div class="tab-item" onclick="setTab('kuis',this)">📝 Kuis</div>
+    </nav>
+    <div class="content">
+      <div class="panel active" id="panel-tujuan">
+        <div class="sec-head"><div id="topo-tag" class="topo-tag"></div><h2 id="tujuan-h2">Tujuan Pembelajaran</h2><p id="tujuan-sub"></p></div>
+        <div class="card"><h3>🎯 Capaian Pembelajaran</h3><div class="tujuan-list" id="tujuan-list"></div></div>
+        <div class="card"><h3>📌 Kata Kunci</h3><div id="keywords" class="badge-row" style="margin-bottom:0"></div></div>
+      </div>
+      <div class="panel" id="panel-materi">
+        <div class="sec-head"><h2>Materi Singkat</h2><p id="materi-sub"></p></div>
+        <div class="card"><h3>📡 Pengertian</h3><div class="materi-desc" id="materi-desc"></div><h3 style="margin-bottom:7px">⚡ Karakteristik</h3><div class="info-grid" id="info-grid"></div></div>
+        <div class="card"><h3>✅ Kelebihan</h3><div id="pros" class="badge-row"></div><h3 style="margin-bottom:7px">⚠️ Kelemahan</h3><div id="cons" class="badge-row"></div></div>
+        <div class="card"><h3>🌍 Contoh Nyata</h3><div id="examples" style="font-size:12px;color:var(--text2);line-height:1.9"></div></div>
+      </div>
+      <div class="panel" id="panel-kuis">
+        <div class="sec-head"><h2>Kuis Interaktif</h2><p id="kuis-sub">5 soal pilihan ganda</p></div>
+        <div class="kuis-progress" id="kuis-progress"></div>
+        <div id="kuis-body"></div>
+      </div>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="rp-head">
+      <div class="rp-title" id="rp-title">Simulasi 3D — Star / Bintang</div>
+      <div class="status-bar">
+        <div class="stat-pill"><div class="stat-dot" id="net-dot"></div><span id="net-status">Normal</span></div>
+        <div class="stat-pill">📦 <span id="pkt-total">0</span> paket</div>
+        <div class="stat-pill">🖥️ <span id="node-count">7</span> node</div>
+      </div>
+      <div class="rp-hint">Drag · Scroll · Klik node</div>
+    </div>
+    <div class="mode-bar">
+      <span class="mode-label">Mode:</span>
+      <button class="mode-btn active" onclick="setMode('auto',this)">⚡ Otomatis</button>
+      <button class="mode-btn" onclick="setMode('select',this)">🎯 Pilih Sendiri</button>
+      <span class="mode-hint" id="mode-hint">Klik "Kirim Data" untuk simulasi otomatis</span>
+    </div>
+    <div id="three-wrap">
+      <canvas id="three-canvas"></canvas>
+      <div id="node-popup"><div class="np-name" id="np-name"></div><div class="np-row"><span class="np-key">Tipe</span><span class="np-val" id="np-type"></span></div><div class="np-row"><span class="np-key">Koneksi</span><span class="np-val" id="np-conn"></span></div><div class="np-row"><span class="np-key">Fungsi</span><span class="np-val" id="np-func"></span></div><div class="np-status" id="np-status">Aktif</div></div>
+      <div class="sel-hint" id="sel-hint"></div>
+    </div>
+    <div class="sim-nav">
+      <button class="sim-btn" onclick="simSend()" id="btn-send">📡 Kirim Data</button>
+      <button class="sim-btn" id="sim-rot-btn" onclick="simRotate()">⟳ Auto Rotate</button>
+      <button class="sim-btn" onclick="simReset()">⊙ Reset</button>
+      <button class="sim-btn danger" id="sim-fail-btn" onclick="simFailure()">💥 Simulasi Kerusakan</button>
+      <span class="pkt-counter">Terkirim: <b id="pkt-sent">0</b></span>
+    </div>
+    <div class="sim-log" id="sim-log">Siap — pilih mode dan klik "Kirim Data" untuk memulai.</div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const TOPOS={
+  star:{
+    name:'Star / Bintang',color:'#3a8fff',tagBg:'#0d2a5a',tagColor:'#3a8fff',
+    tujuan:['Menjelaskan konsep dan cara kerja topologi Star','Mengidentifikasi fungsi Hub/Switch sebagai pusat koneksi','Menganalisis kelebihan dan kelemahan topologi Star','Memberi contoh penerapan topologi Star di kehidupan nyata'],
+    keywords:['Hub','Switch','Client','Server','LAN','Kabel UTP'],
+    sub:'Semua perangkat terhubung ke satu titik pusat (Hub/Switch)',
+    desc:'Topologi Star menghubungkan semua perangkat langsung ke sebuah Hub atau Switch pusat. Data dari PC-A selalu melewati Hub, baru diteruskan ke PC tujuan. Jika Hub mati, seluruh jaringan terputus.',
+    info:[{l:'Jumlah Kabel',v:'Banyak',c:''},{l:'Keandalan',v:'Tinggi',c:'g'},{l:'Biaya',v:'Sedang',c:''},{l:'Skalabilitas',v:'Mudah',c:'g'}],
+    pros:['Mudah troubleshoot','Satu PC rusak tidak ganggu lain','Mudah tambah perangkat'],
+    cons:['Hub mati = semua mati','Butuh lebih banyak kabel'],
+    examples:'• Lab komputer sekolah<br>• Jaringan WiFi kantor<br>• Warnet',
+    // STAR: Hub di tengah, PC mengelilingi
+    nodes:[
+      {id:'Hub',label:'Hub',cx:0,cz:0,isHub:true,col:0x1a6fff,type:'Switch/Hub',func:'Pusat koneksi'},
+      {id:'PC-A',label:'PC Guru',angle:0,r:7,col:0x2a7fff,type:'Komputer',func:'End device'},
+      {id:'PC-B',label:'Siswa 1',angle:60,r:7,col:0x2a7fff,type:'Komputer',func:'End device'},
+      {id:'PC-C',label:'Siswa 2',angle:120,r:7,col:0x2a7fff,type:'Komputer',func:'End device'},
+      {id:'PC-D',label:'Siswa 3',angle:180,r:7,col:0x2a7fff,type:'Komputer',func:'End device'},
+      {id:'PC-E',label:'Siswa 4',angle:240,r:7,col:0x2a7fff,type:'Komputer',func:'End device'},
+      {id:'PC-F',label:'Printer',angle:300,r:7,col:0x1a9fdd,type:'Printer',func:'Output device'},
+    ],
+    edges:['Hub|PC-A','Hub|PC-B','Hub|PC-C','Hub|PC-D','Hub|PC-E','Hub|PC-F'],
+    // Aliran: PC-A → Hub → PC-D (benar: semua lewat Hub)
+    autoPath:['PC-A','Hub','PC-D'],
+    // Kerusakan: Hub yang mati, semua PC terputus
+    failNode:'Hub',
+    failMsg:'💥 Hub mati! Semua PC kehilangan koneksi — seluruh jaringan terputus.',
+    kuis:[
+      {q:'Pada topologi Star, semua perangkat terhubung ke...',opts:['Masing-masing perangkat lain','Hub atau Switch pusat','Kabel utama (backbone)','Perangkat terdekat saja'],ans:1,fb:'Benar! Di topologi Star semua perangkat terhubung ke Hub/Switch di tengah.'},
+      {q:'Jika salah satu PC dalam topologi Star rusak, apa yang terjadi?',opts:['Seluruh jaringan mati','PC lain tidak terganggu','Hub ikut mati','Semua data hilang'],ans:1,fb:'Tepat! Setiap PC punya jalur tersendiri ke Hub, kerusakan satu tidak mempengaruhi yang lain.'},
+      {q:'Komponen terpenting dalam topologi Star adalah...',opts:['Kabel coaxial','Kabel fiber optik','Hub atau Switch','Modem'],ans:2,fb:'Benar! Hub adalah jantung topologi Star. Jika rusak, seluruh jaringan akan mati.'},
+      {q:'Topologi Star paling cocok digunakan untuk...',opts:['Jaringan WAN antar kota','Lab komputer sekolah','Jaringan internet global','Jaringan kecil 2 komputer'],ans:1,fb:'Betul! Lab komputer sekolah adalah contoh nyata penggunaan topologi Star.'},
+      {q:'Kelemahan utama topologi Star adalah...',opts:['Sulit menambah perangkat baru','Jika Hub mati semua PC tidak bisa berkomunikasi','Kabelnya sedikit','Harganya murah'],ans:1,fb:'Tepat! Hub adalah single point of failure — jika mati, seluruh jaringan berhenti.'},
+    ]
+  },
+  bus:{
+    name:'Bus',color:'#22c55e',tagBg:'#0a2e18',tagColor:'#22c55e',
+    tujuan:['Menjelaskan konsep topologi Bus dengan kabel backbone','Memahami cara kerja pengiriman data di jaringan Bus','Mengidentifikasi kelebihan dan kelemahan topologi Bus','Menjelaskan mengapa topologi Bus jarang digunakan saat ini'],
+    keywords:['Backbone','Terminator','Coaxial','Broadcast','Collision'],
+    sub:'Satu kabel utama menghubungkan semua perangkat secara linier',
+    desc:'Topologi Bus menggunakan satu kabel utama (backbone). Data dikirim ke SELURUH kabel sekaligus (broadcast) — semua perangkat "mendengar" data, hanya penerima yang dituju yang memprosesnya. Terminator di ujung menyerap sinyal agar tidak memantul.',
+    info:[{l:'Jumlah Kabel',v:'Sedikit',c:'g'},{l:'Keandalan',v:'Rendah',c:'r'},{l:'Biaya',v:'Murah',c:'g'},{l:'Collision',v:'Sering',c:'r'}],
+    pros:['Biaya pemasangan murah','Kabel yang dibutuhkan sedikit','Mudah dipasang untuk jaringan kecil'],
+    cons:['Backbone putus = semua mati','Sering tabrakan data (collision)','Sulit troubleshoot'],
+    examples:'• Jaringan lab komputer lama (era 1990-an)<br>• Jaringan eksperimen & pembelajaran<br>• Saat ini sudah jarang digunakan',
+    nodes:[
+      {id:'T1',label:'Term.',cx:-10,cz:0,col:0x445566,type:'Terminator',func:'Serap sinyal ujung'},
+      {id:'SV',label:'Server',cx:-6,cz:0,col:0x22c55e,type:'Server',func:'Sumber data'},
+      {id:'PC-B',label:'PC-B',cx:-2,cz:0,col:0x16a34a,type:'Komputer',func:'End device'},
+      {id:'PC-C',label:'PC-C',cx:2,cz:0,col:0x16a34a,type:'Komputer',func:'End device'},
+      {id:'PC-D',label:'PC-D',cx:6,cz:0,col:0x16a34a,type:'Komputer',func:'End device'},
+      {id:'T2',label:'Term.',cx:10,cz:0,col:0x445566,type:'Terminator',func:'Serap sinyal ujung'},
+    ],
+    edges:['T1|SV','SV|PC-B','PC-B|PC-C','PC-C|PC-D','PC-D|T2'],
+    // Aliran Bus: data broadcast dari Server melewati semua node di backbone
+    autoPath:['SV','PC-B','PC-C','PC-D','T2'],
+    // Kerusakan Bus: backbone putus di PC-B (segmen terputus)
+    failNode:'PC-B',// backbone putus di sini — semua setelahnya mati
+    failMsg:'💥 Kabel backbone putus di segmen PC-B! PC-C, PC-D tidak bisa menerima data.',
+    kuis:[
+      {q:'Komponen yang dipasang di ujung kabel pada topologi Bus disebut...',opts:['Hub','Terminator','Switch','Router'],ans:1,fb:'Benar! Terminator menyerap sinyal di ujung kabel agar tidak memantul balik.'},
+      {q:'Jenis kabel yang umumnya dipakai di topologi Bus adalah...',opts:['Kabel UTP','Kabel Fiber Optik','Kabel Coaxial','Kabel STP'],ans:2,fb:'Tepat! Kabel Coaxial umum digunakan pada topologi Bus.'},
+      {q:'Apa yang terjadi jika kabel backbone pada topologi Bus putus?',opts:['Hanya PC terdekat terganggu','Seluruh jaringan mati','PC lain masih bisa berkomunikasi','Hub akan mengambil alih'],ans:1,fb:'Benar! Kabel backbone satu-satunya jalur. Jika putus, seluruh jaringan berhenti.'},
+      {q:'Istilah "collision" dalam topologi Bus berarti...',opts:['Kabel yang rusak','Tabrakan data saat dua PC kirim bersamaan','Hub yang mati','Perangkat baru ditambahkan'],ans:1,fb:'Tepat! Collision terjadi saat dua perangkat kirim data bersamaan.'},
+      {q:'Topologi Bus cocok digunakan untuk...',opts:['Jaringan kantor besar','Data center modern','Pembelajaran dan jaringan sangat kecil','Jaringan internet global'],ans:2,fb:'Benar! Topologi Bus kini lebih untuk pembelajaran karena keterbatasannya.'},
+    ]
+  },
+  ring:{
+    name:'Ring / Cincin',color:'#a855f7',tagBg:'#2a1050',tagColor:'#a855f7',
+    tujuan:['Menjelaskan konsep topologi Ring berbentuk lingkaran','Memahami mekanisme token passing dalam pengiriman data','Menganalisis kelebihan topologi Ring dalam menghindari collision','Membandingkan topologi Ring dengan Bus dan Star'],
+    keywords:['Token Ring','Token Passing','Unidirectional','Node','MAN'],
+    sub:'Perangkat terhubung melingkar, data mengalir satu arah (searah jarum jam)',
+    desc:'Topologi Ring menghubungkan semua perangkat membentuk cincin tertutup. Data mengalir hanya SATU ARAH — searah jarum jam — dari node ke node berikutnya. Sistem token passing memastikan hanya satu node yang mengirim pada satu waktu.',
+    info:[{l:'Collision',v:'Tidak Ada',c:'g'},{l:'Kecepatan',v:'Konsisten',c:'g'},{l:'Biaya',v:'Sedang',c:''},{l:'Keandalan',v:'Sedang',c:''}],
+    pros:['Tidak ada tabrakan data','Kecepatan data konsisten','Mudah dipasang'],
+    cons:['Satu node rusak bisa ganggu jaringan','Lambat jika banyak node','Sulit tambah/hapus perangkat'],
+    examples:'• Jaringan IBM Token Ring (era 1980-an)<br>• Metropolitan Area Network (MAN)<br>• Beberapa jaringan industri manufaktur',
+    nodes:'ring',edges:'ring',
+    // Aliran Ring: melingkar penuh searah jarum jam RN0→RN1→RN2→RN3→RN4→RN5→RN0
+    autoPath:'ring-full',
+    // Kerusakan Ring: RN2 mati → jalur dari RN1 ke RN2 terputus
+    failNode:'RN2',
+    failMsg:'💥 Node 3 mati! Jalur data dari Node 2 ke Node 3 terputus — cincin tidak lengkap.',
+    kuis:[
+      {q:'Pada topologi Ring, data bergerak ke arah...',opts:['Dua arah sekaligus','Satu arah (unidirectional)','Ke semua arah acak','Hanya ke Hub pusat'],ans:1,fb:'Benar! Data bergerak satu arah, biasanya searah jarum jam.'},
+      {q:'Mekanisme pengiriman data di topologi Ring disebut...',opts:['Broadcast','CSMA/CD','Token Passing','Packet Switching'],ans:2,fb:'Tepat! Token Passing — hanya perangkat yang memegang token yang boleh mengirim data.'},
+      {q:'Keunggulan utama topologi Ring dibanding Bus adalah...',opts:['Lebih murah','Tidak terjadi collision','Lebih mudah dipasang','Lebih cepat dari semua topologi'],ans:1,fb:'Benar! Karena token passing, collision tidak terjadi.'},
+      {q:'Jika salah satu node dalam topologi Ring mati, maka...',opts:['Hanya node itu terganggu','Jaringan tetap normal','Data tidak bisa melewati node mati','Hub reroute data'],ans:2,fb:'Tepat! Data bergerak satu arah — jika satu node mati, data tidak bisa melewatinya.'},
+      {q:'Topologi Ring paling mirip cara kerjanya dengan...',opts:['Rantai estafet lari sambung','Bintang dengan pusat','Pohon dengan cabang','Jaring laba-laba'],ans:0,fb:'Benar! Seperti estafet — setiap node menerima lalu meneruskan ke berikutnya.'},
+    ]
+  },
+  mesh:{
+    name:'Mesh',color:'#ef4444',tagBg:'#350a0a',tagColor:'#ef4444',
+    tujuan:['Menjelaskan konsep topologi Mesh dengan koneksi antar semua perangkat','Menghitung jumlah koneksi yang dibutuhkan dalam Mesh','Menganalisis mengapa Mesh digunakan di internet dan data center','Memahami konsep redundansi jalur data di topologi Mesh'],
+    keywords:['Full Mesh','Redundansi','Fault Tolerance','Router','Internet'],
+    sub:'Setiap perangkat terhubung ke semua perangkat lain',
+    desc:'Topologi Mesh: setiap router terhubung ke SEMUA router lain. Normal: data ambil jalur terpendek (R-A→R-E→R-D). Saat kerusakan: R-E mati, data otomatis reroute lewat jalur alternatif (R-A→R-B→R-D) — jaringan tetap berjalan!',
+    info:[{l:'Keandalan',v:'Sangat Tinggi',c:'g'},{l:'Redundansi',v:'Penuh',c:'g'},{l:'Biaya',v:'Mahal',c:'r'},{l:'Kompleksitas',v:'Tinggi',c:'r'}],
+    pros:['Sangat andal — banyak jalur cadangan','Satu koneksi rusak tidak ganggu jaringan'],
+    cons:['Butuh sangat banyak kabel','Sangat mahal','Konfigurasi sangat kompleks'],
+    examples:'• Infrastruktur internet global (antar router ISP)<br>• Data center dan server farm<br>• Jaringan militer dan keamanan nasional',
+    nodes:[
+      {id:'R-A',label:'Router A',cx:-5,cz:-4,col:0xef4444,type:'Router',func:'Routing data'},
+      {id:'R-B',label:'Router B',cx:5,cz:-4,col:0xef4444,type:'Router',func:'Routing data'},
+      {id:'R-C',label:'Router C',cx:-5,cz:4,col:0xef4444,type:'Router',func:'Routing data'},
+      {id:'R-D',label:'Router D',cx:5,cz:4,col:0xef4444,type:'Router',func:'Routing data'},
+      {id:'R-E',label:'Router E',cx:0,cz:0,col:0xdc2626,type:'Router',func:'Routing pusat'},
+    ],
+    edges:['R-A|R-B','R-A|R-C','R-A|R-D','R-A|R-E','R-B|R-C','R-B|R-D','R-B|R-E','R-C|R-D','R-C|R-E','R-D|R-E'],
+    // Normal: jalur terpendek R-A → R-E → R-D
+    autoPath:['R-A','R-E','R-D'],
+    // Jalur alternatif saat R-E mati: R-A → R-B → R-D
+    altPath:['R-A','R-B','R-D'],
+    // Kerusakan: R-E mati, tapi jaringan masih hidup via jalur lain
+    failNode:'R-E',
+    failMsg:'💥 Router E mati! Rerouting otomatis: R-A → R-B → R-D — Mesh tetap berjalan!',
+    kuis:[
+      {q:'Rumus jumlah koneksi dalam full mesh dengan n perangkat adalah...',opts:['n × 2','n + (n-1)','n × (n-1) / 2','n²'],ans:2,fb:'Benar! Rumusnya n(n-1)/2. Contoh: 5 perangkat = 5×4/2 = 10 koneksi.'},
+      {q:'Keunggulan utama topologi Mesh adalah...',opts:['Murah dan mudah dipasang','Banyak jalur cadangan (redundansi)','Tidak butuh kabel','Cocok untuk jaringan rumah'],ans:1,fb:'Tepat! Redundansi adalah kekuatan Mesh.'},
+      {q:'Topologi Mesh paling banyak digunakan dalam...',opts:['Lab sekolah sederhana','Jaringan rumah','Internet dan data center','Warnet kecil'],ans:2,fb:'Benar! Internet pada dasarnya adalah topologi Mesh raksasa.'},
+      {q:'Jika satu koneksi putus di topologi Mesh penuh, maka...',opts:['Seluruh jaringan mati','Semua data hilang','Data dialihkan ke jalur lain','Harus pasang ulang semua kabel'],ans:2,fb:'Tepat! Data secara otomatis mencari jalur alternatif.'},
+      {q:'Mengapa topologi Mesh jarang dipakai di rumah atau sekolah kecil?',opts:['Tidak bisa mengirim data','Terlalu lambat','Terlalu mahal dan kompleks','Tidak mendukung WiFi'],ans:2,fb:'Benar! Biaya dan kerumitan konfigurasi membuat Mesh hanya ekonomis untuk infrastruktur besar.'},
+    ]
+  },
+  tree:{
+    name:'Tree / Pohon',color:'#f59e0b',tagBg:'#3a2200',tagColor:'#f59e0b',
+    tujuan:['Menjelaskan konsep topologi Tree sebagai gabungan Star bertingkat','Memahami hierarki perangkat dalam jaringan Tree','Mengidentifikasi peran root switch dan switch cabang','Menganalisis penggunaan topologi Tree di gedung atau kampus'],
+    keywords:['Root Switch','Hierarki','Backbone','Cabang','Kampus'],
+    sub:'Gabungan Star bertingkat yang menyerupai struktur pohon',
+    desc:'Topologi Tree tersusun hierarkis: Root Switch (puncak) → Switch Cabang → PC (ujung). Data harus naik dulu ke hierarki yang lebih tinggi sebelum turun ke tujuan. Contoh: PC-A → SW1 → Root → SW2 → PC-C.',
+    info:[{l:'Hierarki',v:'Jelas',c:'g'},{l:'Skalabilitas',v:'Sangat Baik',c:'g'},{l:'Biaya',v:'Sedang-Tinggi',c:''},{l:'Manajemen',v:'Mudah',c:'g'}],
+    pros:['Sangat mudah dikembangkan','Hierarki jaringan jelas','Mudah troubleshoot per segmen'],
+    cons:['Root rusak = seluruh jaringan terganggu','Butuh banyak kabel dan switch'],
+    examples:'• Jaringan kampus universitas<br>• Jaringan gedung perkantoran bertingkat<br>• Jaringan antar ruang kelas di sekolah besar',
+    nodes:[
+      {id:'Root',label:'Root SW',cx:0,cz:-6,isHub:true,col:0xd97706,type:'Root Switch',func:'Puncak hierarki'},
+      {id:'SW1',label:'Switch 1',cx:-5,cz:0,isHub:true,col:0xf59e0b,type:'Switch',func:'Distribusi cabang kiri'},
+      {id:'SW2',label:'Switch 2',cx:5,cz:0,isHub:true,col:0xf59e0b,type:'Switch',func:'Distribusi cabang kanan'},
+      {id:'PC-A',label:'PC-A',cx:-8,cz:6,col:0xfbbf24,type:'Komputer',func:'End device'},
+      {id:'PC-B',label:'PC-B',cx:-3,cz:6,col:0xfbbf24,type:'Komputer',func:'End device'},
+      {id:'PC-C',label:'PC-C',cx:3,cz:6,col:0xfbbf24,type:'Komputer',func:'End device'},
+      {id:'PC-D',label:'PC-D',cx:8,cz:6,col:0xfbbf24,type:'Komputer',func:'End device'},
+    ],
+    edges:['Root|SW1','Root|SW2','SW1|PC-A','SW1|PC-B','SW2|PC-C','SW2|PC-D'],
+    // Aliran Tree: PC-A naik ke SW1, naik ke Root, turun ke SW2, turun ke PC-C
+    autoPath:['PC-A','SW1','Root','SW2','PC-C'],
+    // Kerusakan: Root mati → SW1, SW2, semua PC ikut mati
+    failNode:'Root',
+    failMsg:'💥 Root Switch mati! SW1, SW2, dan semua PC kehilangan koneksi antar segmen.',
+    kuis:[
+      {q:'Topologi Tree merupakan pengembangan dari topologi...',opts:['Bus','Ring','Star','Mesh'],ans:2,fb:'Benar! Tree pada dasarnya adalah beberapa Star yang dihubungkan secara hierarkis.'},
+      {q:'Perangkat di tingkat tertinggi dalam topologi Tree disebut...',opts:['End Switch','Terminal Node','Root Switch','Gateway Node'],ans:2,fb:'Tepat! Root Switch berada di puncak hierarki.'},
+      {q:'Topologi Tree paling cocok digunakan untuk...',opts:['Jaringan rumah 3 PC','Warnet 10 komputer','Jaringan kampus atau gedung besar','Jaringan 2 komputer'],ans:2,fb:'Benar! Struktur hierarkis Tree sangat cocok untuk kampus atau gedung besar.'},
+      {q:'Bagaimana PC-A mengirim data ke PC-C di topologi Tree?',opts:['Langsung ke PC-C','Lewat Hub terdekat saja','Melewati Switch cabang dan Root Switch','Broadcast ke semua PC'],ans:2,fb:'Tepat! PC-A → SW1 → Root → SW2 → PC-C. Data naik hierarki dulu baru turun ke tujuan.'},
+      {q:'Kelemahan kritis topologi Tree adalah...',opts:['Tidak bisa menambah PC','Root Switch mati = seluruh jaringan terputus','Kabelnya terlalu pendek','Data bergerak lambat'],ans:1,fb:'Benar! Root Switch adalah single point of failure utama.'},
+    ]
+  }
+};
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let curTopo='star',curTab='tujuan';
+let kuisState={q:0,score:0,answered:false,ans:-1};
+let R3={renderer:null,scene:null,camera:null,animId:null,hubLight:null,hubRing:null,hubRingMat:null};
+let drag={active:false,mx:0,my:0};
+let cam={theta:0.35,phi:0.42,r:22};
+let nodeObjs=[],edgeObjs=[],pktMeshes=[],trails=[];
+let simAuto=false,simFailed=false,simAnim=null;
+let pktSent=0,pktTotal=0;
+let simMode='auto',selFrom=null,selTo=null,hoveredNode=null;
+const PKT_COLS=[0xffcc00,0x00d4ff,0xff6b35,0xa855f7,0x22c55e];
+let pktIdx=0;
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function setTopo(name){
+  curTopo=name;
+  document.querySelectorAll('.topo-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+name).classList.add('active');
+  document.getElementById('rp-title').textContent='Simulasi 3D — '+TOPOS[name].name;
+  selFrom=null;selTo=null;
+  renderLeft();initThree();
+  if(curTab==='kuis')initKuis();
+}
+function setTab(name,el){
+  curTab=name;
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='kuis')initKuis();
+}
+function setMode(m,el){
+  simMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  selFrom=null;selTo=null;resetSelRings();
+  if(m==='select'){
+    document.getElementById('mode-hint').textContent='Klik node SUMBER lalu node TUJUAN';
+    document.getElementById('sel-hint').style.display='block';
+    document.getElementById('sel-hint').textContent='Klik node SUMBER';
+    document.getElementById('btn-send').disabled=true;
+  } else {
+    document.getElementById('mode-hint').textContent='Klik "Kirim Data" untuk simulasi otomatis';
+    document.getElementById('sel-hint').style.display='none';
+    document.getElementById('btn-send').disabled=false;
+  }
+}
+
+// ══════════════════════════════════════════════
+// RENDER LEFT
+// ══════════════════════════════════════════════
+function renderLeft(){
+  const t=TOPOS[curTopo];
+  const tag=document.getElementById('topo-tag');
+  tag.textContent=t.name;
+  tag.style.cssText=`display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.6px;margin-bottom:8px;background:${t.tagBg};color:${t.tagColor}`;
+  document.getElementById('tujuan-h2').textContent='Tujuan Pembelajaran — '+t.name;
+  document.getElementById('tujuan-sub').textContent=t.sub;
+  document.getElementById('tujuan-list').innerHTML=t.tujuan.map((x,i)=>`<div class="tujuan-item"><div class="tujuan-num">${i+1}</div><div class="tujuan-text">${x}</div></div>`).join('');
+  document.getElementById('keywords').innerHTML=t.keywords.map(k=>`<span class="badge info">${k}</span>`).join('');
+  document.getElementById('materi-sub').textContent=t.sub;
+  document.getElementById('materi-desc').innerHTML=t.desc;
+  document.getElementById('info-grid').innerHTML=t.info.map(x=>`<div class="info-box"><div class="ib-label">${x.l}</div><div class="ib-val ${x.c}">${x.v}</div></div>`).join('');
+  document.getElementById('pros').innerHTML=t.pros.map(x=>`<span class="badge good">✓ ${x}</span>`).join('');
+  document.getElementById('cons').innerHTML=t.cons.map(x=>`<span class="badge bad">✗ ${x}</span>`).join('');
+  document.getElementById('examples').innerHTML=t.examples;
+}
+
+// ══════════════════════════════════════════════
+// THREE.JS
+// ══════════════════════════════════════════════
+function initThree(){
+  const wrap=document.getElementById('three-wrap');
+  const canvas=document.getElementById('three-canvas');
+  if(R3.animId) cancelAnimationFrame(R3.animId);
+  if(R3.renderer) R3.renderer.dispose();
+  nodeObjs=[];edgeObjs=[];pktMeshes=[];trails=[];
+  simFailed=false;simAuto=false;simAnim=null;
+  document.getElementById('sim-rot-btn').classList.remove('active');
+  document.getElementById('sim-fail-btn').classList.remove('active');
+  document.getElementById('sim-fail-btn').textContent='💥 Simulasi Kerusakan';
+  setLog('Siap — pilih mode dan klik "Kirim Data" untuk memulai.');
+  updateStatusBar(true);
+
+  const W=wrap.clientWidth||600,H=wrap.clientHeight||380;
+  R3.scene=new THREE.Scene();
+  R3.scene.background=new THREE.Color(0x060d1a);
+  R3.scene.fog=new THREE.Fog(0x060d1a,30,72);
+  R3.camera=new THREE.PerspectiveCamera(50,W/H,0.1,200);
+  R3.renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+  R3.renderer.setSize(W,H);R3.renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  R3.renderer.shadowMap.enabled=true;
+
+  R3.scene.add(new THREE.AmbientLight(0x1a2040,2.2));
+  const dl=new THREE.DirectionalLight(0x7eb8ff,1.5);dl.position.set(6,12,8);dl.castShadow=true;R3.scene.add(dl);
+  const tc=TOPOS[curTopo];
+  const hlc=parseInt(tc.color.replace('#',''),16);
+  R3.hubLight=new THREE.PointLight(hlc,3,20);R3.hubLight.position.set(0,1,0);R3.scene.add(R3.hubLight);
+  R3.scene.add(new THREE.GridHelper(40,20,0x0d1e38,0x091628)).position.y=-3.5;
+
+  buildNodes();buildEdges();
+
+  // multiple packet meshes for multi-packet support
+  for(let i=0;i<3;i++){
+    const pm=new THREE.Mesh(new THREE.SphereGeometry(0.24,16,16),new THREE.MeshBasicMaterial({color:0xffcc00}));
+    pm.visible=false;R3.scene.add(pm);pktMeshes.push(pm);
+  }
+
+  // Hub glow ring
+  const rg=new THREE.RingGeometry(1.3,1.6,32);
+  const rm=new THREE.MeshBasicMaterial({color:hlc,side:THREE.DoubleSide,transparent:true,opacity:0.25});
+  R3.hubRing=new THREE.Mesh(rg,rm);R3.hubRing.rotation.x=-Math.PI/2;R3.hubRing.position.y=0.05;
+  R3.hubRingMat=rm;R3.scene.add(R3.hubRing);
+
+  updateCam();setupEvents(canvas);
+
+  let tk=0;
+  function loop(){
+    R3.animId=requestAnimationFrame(loop);tk+=0.012;
+    if(simAuto){cam.theta+=0.005;updateCam();}
+    if(R3.hubLight&&!simFailed) R3.hubLight.intensity=2.5+Math.sin(tk*2)*0.6;
+    if(R3.hubRing) R3.hubRing.rotation.z=tk*0.4;
+    edgeObjs.forEach(e=>{
+      if(e.active&&!simFailed){
+        const s=0.5+0.5*Math.sin(tk*7+e.phase);
+        e.mat.color.setRGB(s,s*0.75,0);
+      }
+    });
+    for(let i=trails.length-1;i>=0;i--){
+      trails[i].life-=0.045;trails[i].mesh.material.opacity=Math.max(0,trails[i].life);
+      if(trails[i].life<=0){R3.scene.remove(trails[i].mesh);trails.splice(i,1);}
+    }
+    R3.renderer.render(R3.scene,R3.camera);
+  }
+  loop();
+  document.getElementById('node-count').textContent=nodeObjs.length;
+}
+
+function getPos(id){
+  const t=TOPOS[curTopo];
+  if(t.nodes==='ring'){
+    const i=parseInt(id.replace('RN',''));
+    const Rr=7,a=(Math.PI*2/6)*i-Math.PI/2;
+    return new THREE.Vector3(Rr*Math.cos(a),0,Rr*Math.sin(a));
+  }
+  const nd=t.nodes.find(n=>n.id===id);
+  if(!nd) return new THREE.Vector3(0,0,0);
+  if(nd.angle!==undefined){const rad=(nd.angle*Math.PI)/180;return new THREE.Vector3(nd.r*Math.cos(rad),0,nd.r*Math.sin(rad));}
+  return new THREE.Vector3(nd.cx||0,0,nd.cz||0);
+}
+
+function makeSprite(txt,col='#7eb8ff'){
+  const c=document.createElement('canvas');c.width=180;c.height=48;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(6,12,24,0.88)';
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(2,2,176,44,9);else ctx.rect(2,2,176,44);ctx.fill();
+  ctx.font='bold 18px Segoe UI';ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,90,24);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));
+  sp.scale.set(2.6,0.7,1);return sp;
+}
+
+function addNode(id,label,pos,col,isHub,meta){
+  const geo=isHub?new THREE.BoxGeometry(1.8,0.8,1.8):new THREE.BoxGeometry(1.1,1.3,0.3);
+  const mat=new THREE.MeshPhongMaterial({color:col,emissive:new THREE.Color(col).multiplyScalar(0.15),shininess:70});
+  const mesh=new THREE.Mesh(geo,mat);mesh.position.copy(pos);mesh.castShadow=true;
+  if(!isHub)mesh.lookAt(0,0,0);
+  R3.scene.add(mesh);
+  if(!isHub){
+    const sg=new THREE.PlaneGeometry(0.85,0.58);
+    const sm=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.65,side:THREE.DoubleSide});
+    const sc=new THREE.Mesh(sg,sm);
+    const fwd=new THREE.Vector3(0,0,1).applyQuaternion(mesh.quaternion);
+    sc.position.copy(pos).addScaledVector(fwd,0.17);sc.position.y+=0.12;sc.quaternion.copy(mesh.quaternion);R3.scene.add(sc);
+  }
+  const sp=makeSprite(label);sp.position.copy(pos);sp.position.y+=2.2;R3.scene.add(sp);
+  const selGeo=new THREE.RingGeometry(1.0,1.25,32);
+  const selMat=new THREE.MeshBasicMaterial({color:0x00d4ff,side:THREE.DoubleSide,transparent:true,opacity:0});
+  const selRing=new THREE.Mesh(selGeo,selMat);selRing.rotation.x=-Math.PI/2;selRing.position.copy(pos);selRing.position.y=0.06;R3.scene.add(selRing);
+  const t=TOPOS[curTopo];
+  const connCount=t.edges==='ring'?2:(Array.isArray(t.edges)?t.edges.filter(e=>e.includes(id)).length:0);
+  nodeObjs.push({id,label,mesh,sp,selRing,selMat,pos:pos.clone(),mat,origCol:col,isHub,meta,connCount,alive:true});
+}
+
+function buildNodes(){
+  const t=TOPOS[curTopo];
+  if(t.nodes==='ring'){
+    for(let i=0;i<6;i++) addNode('RN'+i,'Node '+(i+1),getPos('RN'+i),0x7c3aed,false,{type:'Node Ring',func:'Relay data'});
+    return;
+  }
+  t.nodes.forEach(nd=>addNode(nd.id,nd.label,getPos(nd.id),nd.col,nd.isHub||false,nd));
+}
+
+function addEdge(idA,idB){
+  const pA=getPos(idA),pB=getPos(idB);
+  const geo=new THREE.BufferGeometry().setFromPoints([pA,pB]);
+  const mat=new THREE.LineBasicMaterial({color:0x1a3a5a,linewidth:2});
+  const line=new THREE.Line(geo,mat);R3.scene.add(line);
+  edgeObjs.push({line,mat,idA,idB,origCol:0x1a3a5a,active:false,phase:Math.random()*Math.PI*2,alive:true});
+}
+
+function buildEdges(){
+  const t=TOPOS[curTopo];
+  if(t.edges==='ring'){for(let i=0;i<6;i++) addEdge('RN'+i,'RN'+((i+1)%6));return;}
+  t.edges.forEach(e=>{const[a,b]=e.split('|');addEdge(a,b);});
+}
+
+function updateCam(){
+  R3.camera.position.set(cam.r*Math.sin(cam.phi)*Math.sin(cam.theta),cam.r*Math.cos(cam.phi),cam.r*Math.sin(cam.phi)*Math.cos(cam.theta));
+  R3.camera.lookAt(0,0,0);
+}
+
+// ══════════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════════
+function setupEvents(canvas){
+  canvas.addEventListener('mousedown',e=>{drag.active=true;drag.mx=e.clientX;drag.my=e.clientY;});
+  window.addEventListener('mouseup',()=>{drag.active=false;});
+  window.addEventListener('mousemove',e=>{
+    if(drag.active){
+      cam.theta-=(e.clientX-drag.mx)*0.008;cam.phi=Math.max(0.15,Math.min(1.4,cam.phi+(e.clientY-drag.my)*0.008));
+      drag.mx=e.clientX;drag.my=e.clientY;updateCam();
+    }
+    handleHover(e,canvas);
+  });
+  canvas.addEventListener('wheel',e=>{cam.r=Math.max(8,Math.min(40,cam.r+e.deltaY*0.05));updateCam();},{passive:true});
+  canvas.addEventListener('click',e=>{if(!drag.active)handleClick(e,canvas);});
+  canvas.addEventListener('touchstart',e=>{drag.mx=e.touches[0].clientX;drag.my=e.touches[0].clientY;});
+  canvas.addEventListener('touchmove',e=>{
+    cam.theta-=(e.touches[0].clientX-drag.mx)*0.012;cam.phi=Math.max(0.15,Math.min(1.4,cam.phi+(e.touches[0].clientY-drag.my)*0.012));
+    drag.mx=e.touches[0].clientX;drag.my=e.touches[0].clientY;updateCam();
+  },{passive:true});
+}
+
+function raycast(e,canvas){
+  const rect=canvas.getBoundingClientRect();
+  const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-(((e.clientY-rect.top)/rect.height)*2-1));
+  const ray=new THREE.Raycaster();ray.setFromCamera(mouse,R3.camera);
+  const meshes=nodeObjs.map(n=>n.mesh);
+  const hits=ray.intersectObjects(meshes,false);
+  if(hits.length>0){const idx=meshes.indexOf(hits[0].object);return nodeObjs[idx];}
+  return null;
+}
+
+function handleHover(e,canvas){
+  const nd=raycast(e,canvas);
+  if(nd&&nd!==hoveredNode){
+    if(hoveredNode&&hoveredNode.id!==selFrom&&hoveredNode.id!==selTo) hoveredNode.selMat.opacity=0;
+    hoveredNode=nd;if(nd.id!==selFrom&&nd.id!==selTo) nd.selMat.opacity=0.35;
+    showPopup(nd,e,canvas);
+  } else if(!nd){
+    if(hoveredNode&&hoveredNode.id!==selFrom&&hoveredNode.id!==selTo) hoveredNode.selMat.opacity=0;
+    hoveredNode=null;hidePopup();
+  }
+}
+
+function handleClick(e,canvas){
+  const nd=raycast(e,canvas);if(!nd)return;
+  if(simMode==='select'){
+    if(!selFrom){
+      selFrom=nd.id;nd.selMat.color.setHex(0x00d4ff);nd.selMat.opacity=0.6;
+      document.getElementById('sel-hint').textContent='✅ '+nd.label+' dipilih — klik node TUJUAN';
+      setLog('📍 Sumber: '+nd.label+' — Klik node tujuan');
+    } else if(nd.id!==selFrom){
+      selTo=nd.id;nd.selMat.color.setHex(0x22c55e);nd.selMat.opacity=0.6;
+      document.getElementById('sel-hint').textContent=getLabel(selFrom)+' → '+nd.label;
+      setLog('✅ Sumber: '+getLabel(selFrom)+' · Tujuan: '+nd.label+' — Klik "Kirim Data"');
+      document.getElementById('btn-send').disabled=false;
+    }
+  }
+}
+
+function showPopup(nd,e,canvas){
+  const pop=document.getElementById('node-popup');
+  document.getElementById('np-name').textContent=nd.label;
+  document.getElementById('np-type').textContent=nd.meta?.type||'Perangkat';
+  document.getElementById('np-conn').textContent=nd.connCount+' koneksi';
+  document.getElementById('np-func').textContent=nd.meta?.func||'—';
+  const st=document.getElementById('np-status');
+  const isAlive=nd.alive&&!simFailed||(simFailed&&nd.alive);
+  st.textContent=nd.alive?'Aktif':'Tidak Aktif';
+  st.className='np-status '+(nd.alive?'ok':'fail');
+  const wrap=document.getElementById('three-wrap');const rect=wrap.getBoundingClientRect();
+  let px=e.clientX-rect.left+14,py=e.clientY-rect.top-30;
+  if(px+215>rect.width)px=e.clientX-rect.left-222;
+  pop.style.left=px+'px';pop.style.top=Math.max(4,py)+'px';pop.style.display='block';
+}
+function hidePopup(){document.getElementById('node-popup').style.display='none';}
+function getLabel(id){const n=nodeObjs.find(x=>x.id===id);return n?n.label:id;}
+function resetSelRings(){nodeObjs.forEach(n=>{n.selMat.opacity=0;n.selMat.color.setHex(0x00d4ff);});}
+
+// ══════════════════════════════════════════════
+// PACKET ANIMATION
+// ══════════════════════════════════════════════
+function spawnTrail(pos,col){
+  const tm=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.75}));
+  tm.position.copy(pos);R3.scene.add(tm);trails.push({mesh:tm,life:1.0});
+}
+
+function animatePath(path,col,onDone){
+  if(!path||path.length<2){onDone&&onDone();return;}
+  const pm=pktMeshes[pktIdx%pktMeshes.length];
+  pm.material.color.setHex(col);pm.visible=true;
+  // Activate edges along path
+  for(let i=0;i<path.length-1;i++){
+    const e=edgeObjs.find(e=>(e.idA===path[i]&&e.idB===path[i+1])||(e.idA===path[i+1]&&e.idB===path[i]));
+    if(e&&e.alive) e.active=true;
+  }
+  let step=0;
+  function next(){
+    if(step>=path.length-1){
+      pm.visible=false;
+      edgeObjs.forEach(e=>{ if(e.active){e.active=false;e.mat.color.setHex(e.alive?e.origCol:0x150505);}});
+      onDone&&onDone();return;
+    }
+    const fr=getPos(path[step]),to=getPos(path[step+1]);
+    let tt=0;
+    simAnim=setInterval(()=>{
+      tt+=0.045;pm.position.lerpVectors(fr,to,Math.min(tt,1));
+      if(tt%0.1<0.05) spawnTrail(pm.position.clone(),col);
+      if(tt>=1){clearInterval(simAnim);simAnim=null;step++;next();}
+    },16);
+  }
+  next();
+}
+
+function simSend(){
+  if(simAnim)return;
+  const t=TOPOS[curTopo];
+  const col=PKT_COLS[pktIdx%PKT_COLS.length];pktIdx++;
+
+  // ── STAR: PC → Hub → PC ──────────────────────
+  if(curTopo==='star'){
+    if(simFailed){setLog('❌ Hub mati! Tidak ada PC yang bisa berkomunikasi.');return;}
+    let path;
+    if(simMode==='select'&&selFrom&&selTo){
+      // Pastikan selalu lewat Hub
+      path=(selFrom==='Hub'||selTo==='Hub')?[selFrom,selTo]:([selFrom,'Hub',selTo]);
+      resetSelPath();
+    } else {
+      path=t.autoPath;
+    }
+    pktTotal++;updatePktCount();
+    setLog('📤 Star: '+getLabel(path[0])+' → Hub → '+getLabel(path[path.length-1]));
+    animatePath(path,col,()=>{pktSent++;document.getElementById('pkt-sent').textContent=pktSent;setLog('✅ Data diterima '+getLabel(path[path.length-1]));});
+  }
+
+  // ── BUS: broadcast linear sepanjang backbone ──
+  else if(curTopo==='bus'){
+    if(simFailed){setLog('❌ Backbone terputus! Data tidak dapat dikirim.');return;}
+    // Data di Bus bergerak linear dari sumber ke ujung (broadcast)
+    let path;
+    if(simMode==='select'&&selFrom&&selTo){
+      path=buildBusPath(selFrom,selTo);resetSelPath();
+    } else {
+      path=t.autoPath;// SV→PC-B→PC-C→PC-D→T2
+    }
+    pktTotal++;updatePktCount();
+    setLog('📤 Bus: Broadcast dari '+getLabel(path[0])+' → sepanjang backbone');
+    animatePath(path,col,()=>{pktSent++;document.getElementById('pkt-sent').textContent=pktSent;setLog('✅ Broadcast sampai ke '+getLabel(path[path.length-1]));});
+  }
+
+  // ── RING: searah jarum jam melingkar ──────────
+  else if(curTopo==='ring'){
+    if(simFailed){setLog('❌ Ring terputus di Node 3! Data tidak dapat beredar.');return;}
+    // Selalu melingkar penuh searah jarum jam
+    const ringPath=['RN0','RN1','RN2','RN3','RN4','RN5','RN0'];
+    pktTotal++;updatePktCount();
+    setLog('📤 Ring: Token beredar searah jarum jam (Node 1→2→3→4→5→6→1)');
+    animatePath(ringPath,col,()=>{pktSent++;document.getElementById('pkt-sent').textContent=pktSent;setLog('✅ Token selesai beredar satu putaran penuh!');});
+  }
+
+  // ── MESH: jalur terpendek, atau alt saat rusak ──
+  else if(curTopo==='mesh'){
+    let path,logMsg;
+    if(simFailed){
+      // R-E mati → pakai jalur alternatif R-A→R-B→R-D
+      path=t.altPath;
+      logMsg='🔄 Rerouting! R-E mati → Jalur alternatif: '+path.map(getLabel).join(' → ');
+    } else if(simMode==='select'&&selFrom&&selTo){
+      path=buildMeshPath(selFrom,selTo,false);resetSelPath();
+      logMsg='📤 Mesh: '+path.map(getLabel).join(' → ');
+    } else {
+      path=t.autoPath;// R-A→R-E→R-D (jalur terpendek normal)
+      logMsg='📤 Mesh: Jalur terpendek '+path.map(getLabel).join(' → ');
+    }
+    pktTotal++;updatePktCount();
+    setLog(logMsg);
+    animatePath(path,col,()=>{pktSent++;document.getElementById('pkt-sent').textContent=pktSent;setLog('✅ Data sampai ke '+getLabel(path[path.length-1]));});
+  }
+
+  // ── TREE: naik hierarki lalu turun ───────────
+  else if(curTopo==='tree'){
+    if(simFailed){setLog('❌ Root Switch mati! Tidak ada komunikasi antar segmen.');return;}
+    let path;
+    if(simMode==='select'&&selFrom&&selTo){
+      path=buildTreePath(selFrom,selTo);resetSelPath();
+    } else {
+      path=t.autoPath;// PC-A→SW1→Root→SW2→PC-C
+    }
+    pktTotal++;updatePktCount();
+    setLog('📤 Tree: Naik hierarki → '+path.map(getLabel).join(' → '));
+    animatePath(path,col,()=>{pktSent++;document.getElementById('pkt-sent').textContent=pktSent;setLog('✅ Data diterima '+getLabel(path[path.length-1]));});
+  }
+}
+
+function resetSelPath(){
+  selFrom=null;selTo=null;resetSelRings();
+  document.getElementById('btn-send').disabled=true;
+  document.getElementById('sel-hint').textContent='Klik node SUMBER';
+}
+
+function updatePktCount(){document.getElementById('pkt-total').textContent=pktTotal;}
+
+// Bangun path Bus (linear searah backbone)
+function buildBusPath(fromId,toId){
+  const order=['T1','SV','PC-B','PC-C','PC-D','T2'];
+  const fi=order.indexOf(fromId),ti=order.indexOf(toId);
+  if(fi<0||ti<0) return[fromId,toId];
+  if(fi<=ti) return order.slice(fi,ti+1);
+  return order.slice(ti,fi+1).reverse();
+}
+
+// Bangun path Mesh (BFS sederhana, hindari node mati)
+function buildMeshPath(fromId,toId,avoidE){
+  const t=TOPOS.mesh;
+  // BFS
+  const visited={[fromId]:true};const queue=[[fromId]];
+  const deadNodes=avoidE?['R-E']:[];
+  while(queue.length>0){
+    const path=queue.shift();const last=path[path.length-1];
+    if(last===toId) return path;
+    const neighbors=t.edges.filter(e=>{const[a,b]=e.split('|');return a===last||b===last;}).map(e=>{const[a,b]=e.split('|');return a===last?b:a;}).filter(n=>!visited[n]&&!deadNodes.includes(n));
+    neighbors.forEach(n=>{visited[n]=true;queue.push([...path,n]);});
+  }
+  return[fromId,toId];
+}
+
+// Bangun path Tree (naik ke LCA lalu turun)
+function buildTreePath(fromId,toId){
+  const t=TOPOS.tree;
+  // Cari parent
+  const parent={};
+  t.edges.forEach(e=>{const[a,b]=e.split('|');if(!parent[b])parent[b]=a;if(!parent[a]&&a!=='Root')parent[a]=b;});
+  // Cari path dari node ke Root
+  function pathToRoot(id){const p=[id];let cur=id;while(cur!=='Root'&&parent[cur]){cur=parent[cur];p.push(cur);}return p;}
+  const pathA=pathToRoot(fromId),pathB=pathToRoot(toId);
+  // Cari LCA
+  let lca='Root';
+  for(const n of pathA){if(pathB.includes(n)){lca=n;break;}}
+  const aToLca=pathA.slice(0,pathA.indexOf(lca)+1);
+  const lcaToB=pathB.slice(0,pathB.indexOf(lca)).reverse();
+  return[...aToLca,...lcaToB];
+}
+
+// ══════════════════════════════════════════════
+// FAILURE SIMULATION
+// ══════════════════════════════════════════════
+function simFailure(){
+  simFailed=!simFailed;
+  const btn=document.getElementById('sim-fail-btn');
+  const t=TOPOS[curTopo];
+
+  if(simFailed){
+    btn.classList.add('active');btn.textContent='🔁 Pulihkan Jaringan';
+
+    if(curTopo==='star'){
+      // Hub mati → semua edge dan PC menjadi gelap
+      nodeObjs.forEach(n=>{n.mat.color.setHex(0x100808);n.mat.emissive.setHex(0);n.alive=false;});
+      edgeObjs.forEach(e=>{e.mat.color.setHex(0x100808);e.alive=false;e.active=false;});
+      if(R3.hubLight){R3.hubLight.color.setHex(0xff2222);R3.hubLight.intensity=0.5;}
+    }
+    else if(curTopo==='bus'){
+      // Backbone putus di PC-B → PC-C, PC-D, T2 mati (setelah titik putus)
+      const deadAfter=['PC-C','PC-D','T2'];
+      nodeObjs.forEach(n=>{
+        if(deadAfter.includes(n.id)){n.mat.color.setHex(0x0a0f0a);n.mat.emissive.setHex(0);n.alive=false;}
+      });
+      // Edge PC-B→PC-C terputus
+      edgeObjs.forEach(e=>{
+        if((e.idA==='PC-B'&&e.idB==='PC-C')||(e.idA==='PC-C'&&e.idB==='PC-B')){
+          e.mat.color.setHex(0xff2222);e.alive=false;// merah = terputus
+        } else if(deadAfter.includes(e.idA)||deadAfter.includes(e.idB)){
+          e.mat.color.setHex(0x0a0f0a);e.alive=false;
+        }
+      });
+      if(R3.hubLight){R3.hubLight.color.setHex(0xff4422);R3.hubLight.intensity=0.8;}
+    }
+    else if(curTopo==='ring'){
+      // RN2 mati → edge RN1→RN2 dan RN2→RN3 terputus
+      const deadNode=nodeObjs.find(n=>n.id==='RN2');
+      if(deadNode){deadNode.mat.color.setHex(0x100808);deadNode.mat.emissive.setHex(0);deadNode.alive=false;}
+      edgeObjs.forEach(e=>{
+        if(e.idA==='RN1'&&e.idB==='RN2'||e.idA==='RN2'&&e.idB==='RN3'||e.idA==='RN2'){
+          e.mat.color.setHex(0xff2222);e.alive=false;
+        }
+      });
+      if(R3.hubLight){R3.hubLight.color.setHex(0xaa22ff);R3.hubLight.intensity=0.8;}
+    }
+    else if(curTopo==='mesh'){
+      // R-E mati → semua edge terhubung ke R-E menjadi abu
+      const deadNode=nodeObjs.find(n=>n.id==='R-E');
+      if(deadNode){deadNode.mat.color.setHex(0x100808);deadNode.mat.emissive.setHex(0);deadNode.alive=false;}
+      edgeObjs.forEach(e=>{
+        if(e.idA==='R-E'||e.idB==='R-E'){e.mat.color.setHex(0x2a1010);e.alive=false;}
+      });
+      // Tunjukkan jalur alternatif aktif R-A→R-B→R-D
+      edgeObjs.forEach(e=>{
+        if((e.idA==='R-A'&&e.idB==='R-B')||(e.idA==='R-B'&&e.idB==='R-D')||(e.idA==='R-B'&&e.idB==='R-A')||(e.idA==='R-D'&&e.idB==='R-B')){
+          e.mat.color.setHex(0xffcc00);e.alive=true;
+        }
+      });
+      if(R3.hubLight){R3.hubLight.color.setHex(0xff4422);R3.hubLight.intensity=1.5;}
+    }
+    else if(curTopo==='tree'){
+      // Root mati → semua node mati
+      nodeObjs.forEach(n=>{n.mat.color.setHex(0x100808);n.mat.emissive.setHex(0);n.alive=false;});
+      edgeObjs.forEach(e=>{e.mat.color.setHex(0x100808);e.alive=false;e.active=false;});
+      if(R3.hubLight){R3.hubLight.color.setHex(0xff4422);R3.hubLight.intensity=0.5;}
+    }
+
+    if(R3.hubRingMat) R3.hubRingMat.color.setHex(0xff2222);
+    setLog(t.failMsg);updateStatusBar(false);
+
+  } else {
+    // PULIHKAN semua
+    const hlc=parseInt(t.color.replace('#',''),16);
+    nodeObjs.forEach(n=>{n.mat.color.setHex(n.origCol);n.mat.emissive.setHex(new THREE.Color(n.origCol).multiplyScalar(0.15));n.alive=true;});
+    edgeObjs.forEach(e=>{e.mat.color.setHex(e.origCol);e.alive=true;e.active=false;});
+    if(R3.hubLight){R3.hubLight.color.setHex(hlc);R3.hubLight.intensity=3;}
+    if(R3.hubRingMat) R3.hubRingMat.color.setHex(hlc);
+    btn.classList.remove('active');btn.textContent='💥 Simulasi Kerusakan';
+    setLog('✅ Jaringan dipulihkan — semua perangkat kembali aktif.');
+    updateStatusBar(true);
+  }
+}
+
+function simRotate(){simAuto=!simAuto;document.getElementById('sim-rot-btn').classList.toggle('active',simAuto);}
+function simReset(){cam.theta=0.35;cam.phi=0.42;cam.r=22;updateCam();setLog('🔄 Kamera direset.');}
+function updateStatusBar(ok){document.getElementById('net-dot').className='stat-dot'+(ok?'':' red');document.getElementById('net-status').textContent=ok?'Normal':'Gangguan';}
+function setLog(msg){document.getElementById('sim-log').textContent=msg;}
+
+// ══════════════════════════════════════════════
+// KUIS
+// ══════════════════════════════════════════════
+function initKuis(){kuisState={q:0,score:0,answered:false,ans:-1};renderKuis();}
+function renderKuis(){
+  const t=TOPOS[curTopo];
+  document.getElementById('kuis-sub').textContent='5 soal pilihan ganda — Topologi '+t.name;
+  document.getElementById('kuis-progress').innerHTML=t.kuis.map((_,i)=>`<div class="kuis-dot${i<kuisState.q?' done':i===kuisState.q?' current':''}"></div>`).join('');
+  if(kuisState.q>=t.kuis.length){showResult();return;}
+  const qd=t.kuis[kuisState.q],L=['A','B','C','D'];
+  document.getElementById('kuis-body').innerHTML=`
+    <div class="kuis-q"><span class="qnum">${kuisState.q+1}</span>${qd.q}</div>
+    <div class="kuis-opts">${qd.opts.map((o,i)=>`<div class="kuis-opt" id="opt${i}" onclick="pickOpt(${i})"><div class="opt-letter">${L[i]}</div>${o}</div>`).join('')}</div>
+    <div class="kuis-fb" id="kfb"></div>
+    <div class="kuis-btns">
+      <button class="kbtn primary" id="ksub" onclick="submitKuis()" disabled>Cek Jawaban</button>
+      <button class="kbtn secondary" id="knxt" onclick="nextKuis()" style="display:none">${kuisState.q<t.kuis.length-1?'Soal Berikutnya →':'Lihat Hasil'}</button>
+    </div>`;
+}
+function pickOpt(i){if(kuisState.answered)return;kuisState.ans=i;document.querySelectorAll('.kuis-opt').forEach((o,j)=>o.classList.toggle('selected',j===i));document.getElementById('ksub').disabled=false;}
+function submitKuis(){
+  if(kuisState.ans<0||kuisState.answered)return;kuisState.answered=true;
+  const qd=TOPOS[curTopo].kuis[kuisState.q],ok=kuisState.ans===qd.ans;
+  if(ok)kuisState.score++;
+  document.querySelectorAll('.kuis-opt').forEach((o,j)=>{o.classList.add('disabled');if(j===qd.ans)o.classList.add('correct');else if(j===kuisState.ans&&!ok)o.classList.add('wrong');});
+  const fb=document.getElementById('kfb');fb.className='kuis-fb show '+(ok?'correct':'wrong');fb.innerHTML=(ok?'✅ Benar! ':'❌ Kurang tepat. ')+qd.fb;
+  document.getElementById('ksub').style.display='none';document.getElementById('knxt').style.display='inline-block';
+}
+function nextKuis(){kuisState.q++;kuisState.answered=false;kuisState.ans=-1;renderKuis();}
+function showResult(){
+  const s=kuisState.score,pct=Math.round(s/5*100),cls=pct>=80?'great':pct>=60?'ok':'poor';
+  const msg=pct>=80?'Luar biasa! Kamu sangat memahami topologi ini 🎉':pct>=60?'Bagus! Sedikit lagi sempurna 👍':'Terus semangat belajar! 💪';
+  document.getElementById('kuis-body').innerHTML=`<div class="kuis-result"><div class="kuis-score ${cls}">${pct}%</div><p>${s} dari 5 soal benar — ${msg}</p><button class="kbtn primary" onclick="initKuis()">↺ Ulangi Kuis</button></div>`;
+}
+
+// ══════════════════════════════════════════════
+// RESIZE & BOOT
+// ══════════════════════════════════════════════
+window.addEventListener('resize',()=>{
+  if(!R3.renderer)return;
+  const wrap=document.getElementById('three-wrap');
+  R3.renderer.setSize(wrap.clientWidth,wrap.clientHeight);
+  R3.camera.aspect=wrap.clientWidth/wrap.clientHeight;R3.camera.updateProjectionMatrix();
+});
+
+renderLeft();
+setTimeout(initThree,80);
+</script>
+</body>
+</html>
