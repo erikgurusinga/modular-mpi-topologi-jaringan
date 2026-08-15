@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    // Onboarding guard: this page requires the cover-page form (nama +
+    // sekolah) to have been completed this session. Without it, bounce
+    // back to the cover instead of showing module content to an
+    // unidentified visitor (e.g. someone who bookmarked/typed this URL,
+    // or reached it via a cover-page shortcut like the CP & TP modal).
+    if (sessionStorage.getItem('labmaya_entered') !== '1') {
+      location.replace('../../index.html');
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluasi - Lab Maya Jaringan Komputer</title>
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .eval-container {
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 2rem 2rem;
+    }
+
+    /* Start Screen */
+    .eval-start {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .eval-start-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: var(--radius-lg);
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .eval-start h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .eval-start p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+      line-height: 1.7;
+    }
+
+    .eval-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+    }
+
+    .eval-info-item {
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .eval-info-item .val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+    }
+
+    .eval-info-item .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .category-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .cat-btn {
+      padding: 8px 18px;
+      border-radius: 100px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .cat-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+    }
+
+    .cat-btn.active {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: white;
+    }
+
+    /* Progress Bar */
+    .eval-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 1rem 1.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-input);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--gradient-primary);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .progress-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+      white-space: nowrap;
+    }
+
+    /* Question Card */
+    .question-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .question-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      flex-shrink: 0;
+    }
+
+    .question-category {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .question-text {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+
+    .question-text code {
+      background: var(--bg-input);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+      font-size: 0.9em;
+    }
+
+    .answer-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .answer-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+    }
+
+    .answer-option:hover:not(.disabled) {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .answer-option.selected {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .answer-option.correct {
+      border-color: var(--accent-green);
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    .answer-option.wrong {
+      border-color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .answer-option.disabled {
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .answer-option .opt-letter {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .answer-option.selected .opt-letter {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .answer-option.correct .opt-letter {
+      border-color: var(--accent-green);
+      background: var(--accent-green);
+      color: white;
+    }
+
+    .answer-option.wrong .opt-letter {
+      border-color: var(--accent-red);
+      background: var(--accent-red);
+      color: white;
+    }
+
+    .answer-feedback {
+      margin-top: 1rem;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .answer-feedback.show {
+      display: block;
+    }
+
+    .answer-feedback.correct {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      color: var(--accent-green);
+    }
+
+    .answer-feedback.wrong {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+    }
+
+    /* Nav Buttons */
+    .question-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Result Screen */
+    .result-screen {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .result-circle-wrap {
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 1.5rem;
+      position: relative;
+    }
+
+    .result-circle-wrap svg {
+      transform: rotate(-90deg);
+    }
+
+    .result-circle-bg {
+      fill: none;
+      stroke: var(--border-color);
+      stroke-width: 8;
+    }
+
+    .result-circle-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.5s ease;
+    }
+
+    .result-score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .result-score-label {
+      position: absolute;
+      top: 62%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .result-grade {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      max-width: 600px;
+      margin: 1.5rem auto;
+    }
+
+    .result-stat {
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .result-stat .rs-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .result-stat .rs-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .result-breakdown {
+      max-width: 600px;
+      margin: 1.5rem auto;
+      text-align: left;
+    }
+
+    .breakdown-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .breakdown-item .bd-cat {
+      flex: 1;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .breakdown-item .bd-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .breakdown-bar {
+      width: 80px;
+      height: 4px;
+      background: var(--bg-input);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.8s ease;
+    }
+
+    @media (max-width: 768px) {
+      .eval-info-grid { grid-template-columns: 1fr; }
+      .result-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../../index.html" class="navbar-brand">
+      <div class="navbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <div class="navbar-title">
+        <div class="navbar-title-main">Lab Maya <span>Jaringan Komputer</span></div>
+        <div class="navbar-title-sub">Informatika &middot; Kelas XI &middot; Fase F</div>
+      </div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="../../index.html">Beranda</a></li>
+      <li><a href="capaian-pembelajaran.html">CP &amp; TP</a></li>
+      <li><a href="perangkat.html">Perangkat</a></li>
+      <li><a href="topologi.html">Topologi</a></li>
+      <li><a href="ip-addressing.html">IP Addressing</a></li>
+      <li><a href="simulasi-paket.html">Simulasi OSI</a></li>
+      <li><a href="evaluasi.html" class="active">Evaluasi</a></li>
+      <li>
+        <button class="navbar-sound-btn" data-sound-toggle type="button" aria-label="Aktifkan/matikan suara">
+          <svg class="icon-sound-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg class="icon-sound-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>
+        </button>
+      </li>
+      <li class="navbar-profile" id="navbarProfile">
+        <button class="profile-chip" id="profileChipBtn" type="button">
+          <span class="profile-avatar" id="profileAvatar">S</span>
+          <span class="profile-chip-name" id="profileChipName">Siswa</span>
+          <svg class="profile-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name" id="profileDropdownName">Siswa</div>
+          <div class="profile-dropdown-school" id="profileDropdownSchool">-</div>
+          <div class="profile-dropdown-divider"></div>
+          <a href="../../index.html" class="profile-dropdown-exit" onclick="sessionStorage.clear()" title="Kembali ke halaman cover">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Keluar
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Fixed-height shell: page itself never scrolls, only the content area below does -->
+  <div class="app-shell">
+  <div class="eval-container app-shell-body" style="padding-top:2rem;">
+    <!-- Start Screen -->
+    <div id="startScreen">
+      <div class="eval-start">
+        <div class="eval-start-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <h2>Evaluasi Jaringan Komputer</h2>
+        <p>Uji pemahamanmu tentang materi jaringan komputer yang telah dipelajari. Pilih kategori dan jumlah soal, lalu mulai evaluasi.</p>
+
+        <div class="eval-info-grid">
+          <div class="eval-info-item">
+            <div class="val" id="infoCount">20</div>
+            <div class="label">Soal</div>
+          </div>
+          <div class="eval-info-item">
+            <div class="val">4</div>
+            <div class="label">Kategori</div>
+          </div>
+          <div class="eval-info-item">
+            <div class="val" id="infoTime">10:00</div>
+            <div class="label">Menit</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+          <div class="form-label" style="text-align:center;margin-bottom:8px;">Kategori Soal</div>
+          <div class="category-select">
+            <button class="cat-btn active" data-cat="all" onclick="toggleCategory('all')">Semua Materi</button>
+            <button class="cat-btn" data-cat="topologi" onclick="toggleCategory('topologi')">Topologi</button>
+            <button class="cat-btn" data-cat="ip" onclick="toggleCategory('ip')">IP Addressing</button>
+            <button class="cat-btn" data-cat="osi" onclick="toggleCategory('osi')">OSI Layer</button>
+            <button class="cat-btn" data-cat="perangkat" onclick="toggleCategory('perangkat')">Perangkat</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:2rem;">
+          <div class="form-label" style="text-align:center;margin-bottom:8px;">Jumlah Soal</div>
+          <div class="category-select">
+            <button class="cat-btn" data-num="10" onclick="setQuestionCount(10)">10 Soal</button>
+            <button class="cat-btn active" data-num="20" onclick="setQuestionCount(20)">20 Soal</button>
+            <button class="cat-btn" data-num="30" onclick="setQuestionCount(30)">30 Soal</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startEval()" style="padding:12px 40px;font-size:1rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Mulai Evaluasi
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" style="display:none;">
+      <div class="eval-progress">
+        <div class="progress-text" id="progressText">Soal 1 / 20</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="progress-timer" id="progressTimer">10:00</div>
+      </div>
+
+      <div id="questionContainer"></div>
+
+      <div class="question-nav">
+        <button class="btn btn-secondary" id="btnPrev" onclick="prevQuestion()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Sebelumnya
+        </button>
+        <button class="btn btn-primary" id="btnNext" onclick="nextQuestion()">
+          Selanjutnya
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="resultScreen" style="display:none;"></div>
+  </div>
+  </div>
+
+  <!-- Petunjuk Penggunaan Modal -->
+  <div class="help-modal-overlay" id="helpModalOverlay">
+    <div class="help-modal">
+      <div class="help-modal-header">
+        <h3>Cara Menggunakan Evaluasi &amp; Kuis</h3>
+        <button class="help-modal-close" id="helpModalClose">&times;</button>
+      </div>
+      <div class="help-modal-body">
+        <ol>
+          <li><strong>Pilih Kategori</strong> — pilih Semua Materi, atau fokus ke satu kategori: Topologi, IP Addressing, OSI Layer, atau Perangkat.</li>
+          <li><strong>Pilih Jumlah Soal</strong> — pilih 10, 20, atau 30 soal, lalu klik Mulai Evaluasi.</li>
+          <li><strong>Jawab Soal</strong> — pilih jawaban sebelum waktu di pojok kanan habis, gunakan Sebelumnya/Selanjutnya untuk berpindah soal.</li>
+          <li><strong>Lihat Hasil</strong> — setelah selesai, lihat skor total, skor per kategori, dan pembahasan tiap soal.</li>
+        </ol>
+      </div>
+      <div class="help-modal-footer">
+        <button class="btn btn-primary" id="helpModalStart">Mulai</button>
+      </div>
+    </div>
+  </div>
+  <button class="help-fab" id="helpFabBtn" title="Bantuan">?</button>
+
+  <script src="../js/sound-fx.js?v=2"></script>
+  <script src="../js/profile-menu.js?v=2"></script>
+  <script src="../js/help-modal.js"></script>
+  <script src="../js/evaluasi.js"></script>
+  <script>initHelpModal('evaluasi');</script>
+</body>
+</html>

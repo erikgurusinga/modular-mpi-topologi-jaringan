@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    // Onboarding guard: this page requires the cover-page form (nama +
+    // sekolah) to have been completed this session. Without it, bounce
+    // back to the cover instead of showing module content to an
+    // unidentified visitor (e.g. someone who bookmarked/typed this URL,
+    // or reached it via a cover-page shortcut like the CP & TP modal).
+    if (sessionStorage.getItem('labmaya_entered') !== '1') {
+      location.replace('../../index.html');
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capaian & Tujuan Pembelajaran - Lab Maya</title>
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* ============ SIDEBAR NAV (Daftar Isi) ============ */
+    .cp-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cp-nav-divider {
+      margin: 14px 4px 2px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .cp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(26, 35, 50, 0.45);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .cp-nav-item:hover {
+      color: var(--text-primary);
+      background: rgba(59, 130, 246, 0.08);
+      border-left-color: var(--item-accent, var(--accent-blue));
+    }
+
+    .cp-nav-item.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-color);
+      border-left-color: var(--item-accent, var(--accent-blue));
+      box-shadow: 0 0 14px -3px var(--item-accent, var(--accent-blue));
+    }
+
+    .cp-nav-mark {
+      flex-shrink: 0;
+      width: 25px;
+      height: 25px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--item-accent, var(--text-muted));
+      background: color-mix(in srgb, var(--item-accent, var(--text-muted)) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--item-accent, var(--text-muted)) 35%, transparent);
+    }
+
+    .cp-nav-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .cp-nav-text strong {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .cp-nav-text small {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* ============ WORKSPACE (content panels) ============ */
+    .cp-workspace {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    }
+
+    .cp-workspace-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.25rem 2.5rem 3rem;
+    }
+
+    .cp-panel {
+      display: none;
+      animation: cpPanelIn 0.35s ease;
+    }
+
+    .cp-panel.active {
+      display: block;
+    }
+
+    @keyframes cpPanelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .cp-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .cp-panel-badge {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--panel-accent, var(--accent-blue));
+      background: color-mix(in srgb, var(--panel-accent, var(--accent-blue)) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--panel-accent, var(--accent-blue)) 35%, transparent);
+      box-shadow: 0 0 20px -6px var(--panel-accent, var(--accent-blue));
+    }
+
+    .cp-panel-title h2 {
+      font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.6rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 2px;
+    }
+
+    .cp-panel-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    /* ============ CP quote ============ */
+    .cp-quote {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--accent-blue);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      font-size: clamp(0.95rem, 0.87rem + 0.35vw, 1.05rem);
+      color: var(--text-secondary);
+      line-height: 1.85;
+      margin-bottom: 0.8rem;
+    }
+
+    .cp-source {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .cp-source a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    .cp-source a:hover {
+      text-decoration: underline;
+    }
+
+    /* ============ Pendekatan Pembelajaran Mendalam ============ */
+    .pm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9rem;
+    }
+
+    .pm-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.15rem;
+    }
+
+    .pm-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.55rem;
+      color: var(--pm-color);
+    }
+
+    .pm-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ============ Tujuan Pembelajaran ============ */
+    .tp-text {
+      font-size: clamp(1rem, 0.92rem + 0.35vw, 1.1rem);
+      font-weight: 600;
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
+    }
+
+    .tp-stages {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.7rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tp-stage {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.9rem;
+    }
+
+    .tp-stage-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+
+    .tp-stage p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .tp-stage.memahami .tp-stage-label { color: var(--accent-blue); }
+    .tp-stage.mengaplikasi .tp-stage-label { color: var(--accent-orange); }
+    .tp-stage.merefleksi .tp-stage-label { color: var(--accent-green); }
+
+    /* Bump the sidebar heading a bit on this text-heavy page (overrides the
+       shared .sidebar-header h3 from style.css, page-scoped only). */
+    .sidebar-header h3 {
+      font-size: 0.9rem;
+    }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 1024px) {
+      .pm-grid, .tp-stages { grid-template-columns: 1fr; }
+      .cp-workspace-inner { padding: 2rem; }
+    }
+
+    @media (max-width: 768px) {
+      .cp-workspace-inner { padding: 1.5rem 1.25rem 2.5rem; }
+      .cp-panel-title { gap: 12px; margin-bottom: 1.25rem; padding-bottom: 1rem; }
+      .cp-panel-badge { width: 42px; height: 42px; font-size: 1rem; }
+      .cp-nav-item { padding: 10px; }
+      .cp-panel .btn { width: 100%; text-align: center; }
+    }
+
+    @media (max-width: 480px) {
+      .cp-workspace-inner { padding: 1.25rem 1rem 2rem; }
+      .cp-panel-title h2 { font-size: 1.2rem; }
+      .cp-panel-title p { font-size: 0.75rem; }
+      .cp-quote { padding: 1rem 1.1rem; }
+      .pm-card, .tp-stage { padding: 1rem; }
+      .cp-nav-text small { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../../index.html" class="navbar-brand">
+      <div class="navbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <div class="navbar-title">
+        <div class="navbar-title-main">Lab Maya <span>Jaringan Komputer</span></div>
+        <div class="navbar-title-sub">Informatika &middot; Kelas XI &middot; Fase F</div>
+      </div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="../../index.html">Beranda</a></li>
+      <li><a href="capaian-pembelajaran.html" class="active">CP &amp; TP</a></li>
+      <li><a href="perangkat.html">Perangkat</a></li>
+      <li><a href="topologi.html">Topologi</a></li>
+      <li><a href="ip-addressing.html">IP Addressing</a></li>
+      <li><a href="simulasi-paket.html">Simulasi OSI</a></li>
+      <li><a href="evaluasi.html">Evaluasi</a></li>
+      <li class="navbar-profile" id="navbarProfile">
+        <button class="profile-chip" id="profileChipBtn" type="button">
+          <span class="profile-avatar" id="profileAvatar">S</span>
+          <span class="profile-chip-name" id="profileChipName">Siswa</span>
+          <svg class="profile-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name" id="profileDropdownName">Siswa</div>
+          <div class="profile-dropdown-school" id="profileDropdownSchool">-</div>
+          <div class="profile-dropdown-divider"></div>
+          <a href="../../index.html" class="profile-dropdown-exit" onclick="sessionStorage.clear()" title="Kembali ke halaman cover">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Keluar
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Page Layout: sidebar (daftar isi) + workspace (panel konten) -->
+  <div class="page-container">
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Daftar Isi</h3>
+        <p style="font-size:0.82rem; color:var(--text-muted);">Klik salah satu topik untuk membuka isinya</p>
+      </div>
+      <div class="sidebar-content cp-nav" id="cpNav">
+        <button class="cp-nav-item active" data-target="panel-cp" style="--item-accent:#eab308;">
+          <span class="cp-nav-mark">CP</span>
+          <span class="cp-nav-text">
+            <strong>Capaian Pembelajaran</strong>
+            <small>Ringkasan resmi elemen JKI</small>
+          </span>
+        </button>
+        <button class="cp-nav-item" data-target="panel-pm" style="--item-accent:#64748b;">
+          <span class="cp-nav-mark">PM</span>
+          <span class="cp-nav-text">
+            <strong>Pendekatan Belajar</strong>
+            <small>Prinsip Pembelajaran Mendalam</small>
+          </span>
+        </button>
+
+        <div class="cp-nav-divider">Tujuan Pembelajaran</div>
+
+        <button class="cp-nav-item" data-target="panel-tp1" style="--item-accent:#3b82f6;">
+          <span class="cp-nav-mark">1</span>
+          <span class="cp-nav-text">
+            <strong>Topologi Jaringan</strong>
+            <small>Karakteristik & perbandingan topologi</small>
+          </span>
+        </button>
+        <button class="cp-nav-item" data-target="panel-tp2" style="--item-accent:#06b6d4;">
+          <span class="cp-nav-mark">2</span>
+          <span class="cp-nav-text">
+            <strong>IP Addressing</strong>
+            <small>Pengalamatan IPv4 & subnetting</small>
+          </span>
+        </button>
+        <button class="cp-nav-item" data-target="panel-tp3" style="--item-accent:#f97316;">
+          <span class="cp-nav-mark">3</span>
+          <span class="cp-nav-text">
+            <strong>Simulasi Paket</strong>
+            <small>Enkapsulasi 7 lapisan OSI</small>
+          </span>
+        </button>
+        <button class="cp-nav-item" data-target="panel-tp4" style="--item-accent:#22c55e;">
+          <span class="cp-nav-mark">4</span>
+          <span class="cp-nav-text">
+            <strong>Perangkat Jaringan</strong>
+            <small>Fungsi & posisi lapisan OSI</small>
+          </span>
+        </button>
+        <button class="cp-nav-item" data-target="panel-tp5" style="--item-accent:#a855f7;">
+          <span class="cp-nav-mark">5</span>
+          <span class="cp-nav-text">
+            <strong>Evaluasi & Kuis</strong>
+            <small>Demonstrasi pemahaman menyeluruh</small>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Workspace: satu panel tampil sesuai item Daftar Isi yang diklik -->
+    <div class="cp-workspace">
+      <div class="cp-workspace-inner">
+
+        <div class="cp-panel active" id="panel-cp">
+          <div class="cp-panel-title" style="--panel-accent:#eab308;">
+            <div class="cp-panel-badge">CP</div>
+            <div>
+              <h2>Capaian Pembelajaran</h2>
+              <p>Elemen Jaringan Komputer dan Internet (JKI)</p>
+            </div>
+          </div>
+          <div class="cp-quote">
+            &ldquo;Pada akhir fase F, peserta didik memahami konsep lanjutan jaringan komputer dan internet meliputi topologi jaringan yang menghubungkan beberapa komputer, aspek teknis berbagai jaringan komputer, lapisan informasi dalam suatu sistem jaringan komputer (OSI Layer), komponen jaringan komputer, dan mekanisme pertukaran data, konsep cyber security, tata kelola kontrol akses data, serta faktor-faktor dan konfigurasi keamanan jaringan.&rdquo;
+          </div>
+          <div class="cp-source">
+            Sumber: Elemen Jaringan Komputer dan Internet (JKI) &mdash; Capaian Pembelajaran Informatika Fase F,
+            <a href="https://guru.kemendikdasmen.go.id/kurikulum/referensi-penerapan/capaian-pembelajaran/sd-sma/informatika/fase-f/" target="_blank" rel="noopener">guru.kemendikdasmen.go.id</a>
+          </div>
+        </div>
+
+        <div class="cp-panel" id="panel-pm">
+          <div class="cp-panel-title" style="--panel-accent:#64748b;">
+            <div class="cp-panel-badge">PM</div>
+            <div>
+              <h2>Pendekatan: Pembelajaran Mendalam</h2>
+              <p>Tiga prinsip yang mendasari seluruh modul praktikum</p>
+            </div>
+          </div>
+          <div class="pm-grid">
+            <div class="pm-card" style="--pm-color:#3b82f6;">
+              <h3>Berkesadaran</h3>
+              <p>Siswa aktif memahami tujuan belajarnya di setiap modul, bukan sekadar mengikuti instruksi.</p>
+            </div>
+            <div class="pm-card" style="--pm-color:#f97316;">
+              <h3>Bermakna</h3>
+              <p>Materi dihubungkan langsung ke praktik nyata jaringan komputer, bukan teori yang berdiri sendiri.</p>
+            </div>
+            <div class="pm-card" style="--pm-color:#22c55e;">
+              <h3>Menggembirakan</h3>
+              <p>Dibungkus dalam simulasi visual & interaktif agar proses belajar terasa menyenangkan.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cp-panel" id="panel-tp1">
+          <div class="cp-panel-title" style="--panel-accent:#3b82f6;">
+            <div class="cp-panel-badge">1</div>
+            <div>
+              <h2>Topologi Jaringan</h2>
+              <p>Tujuan Pembelajaran 1</p>
+            </div>
+          </div>
+          <div class="tp-text">Peserta didik mampu mengidentifikasi dan membandingkan karakteristik, kelebihan, dan kekurangan berbagai topologi jaringan (star, bus, ring, mesh, tree).</div>
+          <div class="tp-stages">
+            <div class="tp-stage memahami">
+              <div class="tp-stage-label">Memahami</div>
+              <p>Membaca panduan tiap topologi pada panel informasi di Simulator Topologi.</p>
+            </div>
+            <div class="tp-stage mengaplikasi">
+              <div class="tp-stage-label">Mengaplikasi</div>
+              <p>Membangun & menghubungkan perangkat langsung pada canvas interaktif.</p>
+            </div>
+            <div class="tp-stage merefleksi">
+              <div class="tp-stage-label">Merefleksi</div>
+              <p>Membaca hasil analisis otomatis dari topologi yang telah dibangun.</p>
+            </div>
+          </div>
+          <a href="topologi.html" class="btn btn-primary">Coba Modul Topologi Jaringan &rarr;</a>
+        </div>
+
+        <div class="cp-panel" id="panel-tp2">
+          <div class="cp-panel-title" style="--panel-accent:#06b6d4;">
+            <div class="cp-panel-badge">2</div>
+            <div>
+              <h2>IP Addressing &amp; Subnetting</h2>
+              <p>Tujuan Pembelajaran 2</p>
+            </div>
+          </div>
+          <div class="tp-text">Peserta didik mampu menghitung pengalamatan IPv4 dan subnetting untuk merancang pembagian jaringan.</div>
+          <div class="tp-stages">
+            <div class="tp-stage memahami">
+              <div class="tp-stage-label">Memahami</div>
+              <p>Mempelajari konsep kelas IP dan subnetting pada tab Teori IP Address.</p>
+            </div>
+            <div class="tp-stage mengaplikasi">
+              <div class="tp-stage-label">Mengaplikasi</div>
+              <p>Menghitung network, broadcast, dan jumlah host memakai kalkulator subnet.</p>
+            </div>
+            <div class="tp-stage merefleksi">
+              <div class="tp-stage-label">Merefleksi</div>
+              <p>Menguji ulang pemahaman lewat Latihan Soal dengan pembahasan otomatis.</p>
+            </div>
+          </div>
+          <a href="ip-addressing.html" class="btn btn-primary">Coba Modul IP Addressing &amp; Subnetting &rarr;</a>
+        </div>
+
+        <div class="cp-panel" id="panel-tp3">
+          <div class="cp-panel-title" style="--panel-accent:#f97316;">
+            <div class="cp-panel-badge">3</div>
+            <div>
+              <h2>Simulasi Pengiriman Paket</h2>
+              <p>Tujuan Pembelajaran 3</p>
+            </div>
+          </div>
+          <div class="tp-text">Peserta didik mampu menjelaskan proses enkapsulasi dan dekapsulasi data melalui 7 lapisan OSI dalam pengiriman paket data.</div>
+          <div class="tp-stages">
+            <div class="tp-stage memahami">
+              <div class="tp-stage-label">Memahami</div>
+              <p>Membaca penjelasan model OSI vs TCP/IP pada panel referensi.</p>
+            </div>
+            <div class="tp-stage mengaplikasi">
+              <div class="tp-stage-label">Mengaplikasi</div>
+              <p>Menjalankan simulasi pengiriman paket langkah demi langkah pada 4 skenario.</p>
+            </div>
+            <div class="tp-stage merefleksi">
+              <div class="tp-stage-label">Merefleksi</div>
+              <p>Mengamati & menjelaskan kembali perubahan data di tiap layer dengan kata sendiri.</p>
+            </div>
+          </div>
+          <a href="simulasi-paket.html" class="btn btn-primary">Coba Modul Simulasi Pengiriman Paket &rarr;</a>
+        </div>
+
+        <div class="cp-panel" id="panel-tp4">
+          <div class="cp-panel-title" style="--panel-accent:#22c55e;">
+            <div class="cp-panel-badge">4</div>
+            <div>
+              <h2>Perangkat Jaringan</h2>
+              <p>Tujuan Pembelajaran 4</p>
+            </div>
+          </div>
+          <div class="tp-text">Peserta didik mampu menjelaskan fungsi, spesifikasi, dan posisi lapisan OSI dari berbagai perangkat keras jaringan komputer.</div>
+          <div class="tp-stages">
+            <div class="tp-stage memahami">
+              <div class="tp-stage-label">Memahami</div>
+              <p>Membaca deskripsi, fungsi utama, dan layer OSI tiap perangkat jaringan.</p>
+            </div>
+            <div class="tp-stage mengaplikasi">
+              <div class="tp-stage-label">Mengaplikasi</div>
+              <p>Membandingkan spesifikasi antar-perangkat lewat tabel perbandingan.</p>
+            </div>
+            <div class="tp-stage merefleksi">
+              <div class="tp-stage-label">Merefleksi</div>
+              <p>Menentukan perangkat paling tepat untuk suatu skenario jaringan.</p>
+            </div>
+          </div>
+          <a href="perangkat.html" class="btn btn-primary">Coba Modul Perangkat Jaringan &rarr;</a>
+        </div>
+
+        <div class="cp-panel" id="panel-tp5">
+          <div class="cp-panel-title" style="--panel-accent:#a855f7;">
+            <div class="cp-panel-badge">5</div>
+            <div>
+              <h2>Evaluasi &amp; Kuis</h2>
+              <p>Tujuan Pembelajaran 5</p>
+            </div>
+          </div>
+          <div class="tp-text">Peserta didik mampu mendemonstrasikan pemahaman menyeluruh konsep Jaringan Komputer dan Internet secara mandiri.</div>
+          <div class="tp-stages">
+            <div class="tp-stage memahami">
+              <div class="tp-stage-label">Memahami</div>
+              <p>Mengingat kembali konsep dari keempat modul praktikum sebelumnya.</p>
+            </div>
+            <div class="tp-stage mengaplikasi">
+              <div class="tp-stage-label">Mengaplikasi</div>
+              <p>Mengerjakan soal kuis dari kategori Topologi, IP, OSI, dan Perangkat.</p>
+            </div>
+            <div class="tp-stage merefleksi">
+              <div class="tp-stage-label">Merefleksi</div>
+              <p>Melihat skor per kategori & pembahasan untuk mengetahui bagian yang masih lemah.</p>
+            </div>
+          </div>
+          <a href="evaluasi.html" class="btn btn-primary">Coba Modul Evaluasi &amp; Kuis &rarr;</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/sound-fx.js?v=2"></script>
+  <script src="../js/profile-menu.js?v=2"></script>
+  <script src="../js/capaian-pembelajaran.js"></script>
+</body>
+</html>

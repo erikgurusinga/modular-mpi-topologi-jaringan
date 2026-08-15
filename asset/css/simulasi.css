@@ -1,0 +1,459 @@
+/* ============================================
+   Simulasi Paket Data - Styles
+   ============================================ */
+
+/* Workspace (left pane of the lab layout, scrolls independently of the right panel).
+   Split into a flex column: .sim-workspace-scroll (title/controls/sim-main, scrolls)
+   on top + .sim-explanation-footer (live step-by-step narration) pinned at the
+   bottom so it's always visible while the animation runs above it — see
+   CLAUDE.md for why this isn't just a section that scrolls out of view. */
+.sim-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.sim-workspace-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 1.5rem 2rem 1.5rem;
+}
+
+.sim-explanation-footer {
+  flex-shrink: 0;
+  padding: 0.9rem 2rem;
+  max-height: 190px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+}
+
+.sim-explanation-footer h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.sim-explanation-footer h4 svg {
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+#explanationText {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-width: 980px;
+}
+
+/* Controls */
+.sim-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.sim-control-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.sim-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Main Layout */
+.sim-main {
+  display: grid;
+  grid-template-columns: 1fr 200px 1fr;
+  gap: 0;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+
+/* Endpoints */
+.sim-endpoint {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.endpoint-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.endpoint-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sender-icon {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.receiver-icon {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.endpoint-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.endpoint-ip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+}
+
+/* OSI Layer Stack */
+.osi-stack {
+  padding: 8px;
+}
+
+.osi-layer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.osi-layer.active {
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.1);
+}
+
+.osi-layer.done-send {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.osi-layer.done-receive {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.layer-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.4s ease;
+}
+
+/* Per-layer OSI icon (color set inline per layer group, matches OSI-vs-TCP/IP legend) */
+.layer-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.layer-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.osi-layer.active .layer-icon {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.osi-layer.done-send .layer-icon,
+.osi-layer.done-receive .layer-icon {
+  opacity: 0.9;
+}
+
+.osi-layer.active .layer-number {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.osi-layer.done-send .layer-number {
+  background: var(--accent-green);
+  color: white;
+}
+
+.osi-layer.done-receive .layer-number {
+  background: var(--accent-purple);
+  color: white;
+}
+
+.layer-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.layer-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.layer-protocol {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.layer-data {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--accent-cyan);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.osi-layer.active .layer-data,
+.osi-layer.done-send .layer-data,
+.osi-layer.done-receive .layer-data {
+  opacity: 1;
+}
+
+/* Network Medium */
+.sim-network {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+  min-height: 400px;
+}
+
+.network-path {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.network-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--border-color), var(--accent-blue), var(--border-color));
+  transform: translateX(-50%);
+  opacity: 0.4;
+}
+
+.packet-ball {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  z-index: 5;
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.packet-ball.visible {
+  opacity: 1;
+}
+
+.packet-ball.at-top {
+  top: 10px;
+  transform: translateY(0);
+}
+
+.packet-ball.at-middle {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.packet-ball.at-bottom {
+  top: calc(100% - 58px);
+  transform: translateY(0);
+}
+
+.packet-label {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.network-device-icon {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-primary);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.network-device-icon span {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.network-status {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  min-width: 180px;
+}
+
+/* OSI Comparison */
+.osi-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.osi-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.osi-col-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 6px 0;
+  text-align: center;
+}
+
+.osi-cmp-item {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tcpip-merged {
+  min-height: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sim-main {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .sim-network {
+    min-height: 120px;
+  }
+  .network-path {
+    height: 100px;
+    flex-direction: row;
+  }
+  .network-line {
+    top: 50%;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 3px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, var(--border-color), var(--accent-blue), var(--border-color));
+  }
+
+  /* Jalur jadi horizontal, jadi bola paket harus bergerak kiri->kanan (pakai left),
+     bukan atas->bawah (top). Override posisi at-top/at-middle/at-bottom di sini. */
+  .packet-ball {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .packet-ball.at-top {
+    top: 50%;
+    left: 8%;
+    transform: translate(-50%, -50%);
+  }
+  .packet-ball.at-middle {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .packet-ball.at-bottom {
+    top: 50%;
+    left: 92%;
+    transform: translate(-50%, -50%);
+  }
+}

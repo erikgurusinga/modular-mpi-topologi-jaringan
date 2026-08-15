@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    // Onboarding guard: this page requires the cover-page form (nama +
+    // sekolah) to have been completed this session. Without it, bounce
+    // back to the cover instead of showing module content to an
+    // unidentified visitor (e.g. someone who bookmarked/typed this URL,
+    // or reached it via a cover-page shortcut like the CP & TP modal).
+    if (sessionStorage.getItem('labmaya_entered') !== '1') {
+      location.replace('../../index.html');
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perangkat Jaringan - Lab Maya</title>
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* .device-catalog's margin-top collapses through <body> (classic CSS
+       margin-collapsing) unless <body> has its own block formatting
+       context — without this, the page measures 64px taller than the
+       viewport (the navbar's height) and becomes scrollable, dragging this
+       fixed-height layout up/down even though its children already manage
+       their own internal scroll. Same fix as .page-container in style.css.
+       Desktop-only (min-width, mirrors the existing ≤768px breakpoint
+       below) because .device-catalog deliberately reverts to a normal
+       scrolling page on mobile — body must stay scrollable there. */
+    @media (min-width: 769px) {
+      body {
+        overflow: hidden;
+      }
+    }
+
+    .device-catalog {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.5rem;
+      margin-top: 64px;
+      padding: 2rem;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    .device-list-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .device-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .device-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .device-list-item:hover {
+      border-color: var(--accent-blue);
+      background: var(--bg-card-hover);
+    }
+
+    .device-list-item.active {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.08);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    .device-list-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .device-list-info h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .device-list-info span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .device-detail {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .detail-hero {
+      padding: 2.5rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .detail-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .detail-hero-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .detail-hero h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .detail-hero .detail-category {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ============ DETAIL CONTENT TABS ============ */
+    .device-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 20px;
+      padding: 0 2rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .device-tab {
+      padding: 12px 1px;
+      margin-bottom: -1px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .device-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .device-tab.active {
+      color: var(--tab-color, var(--accent-blue));
+      border-bottom-color: var(--tab-color, var(--accent-blue));
+    }
+
+    .tab-panel {
+      padding: 1.75rem 2rem 2rem;
+    }
+
+    .detail-fade {
+      animation: detailFadeIn 0.28s ease;
+    }
+
+    @keyframes detailFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .detail-section {
+      margin-bottom: 2rem;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-section h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .detail-section p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .spec-card {
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .spec-card .spec-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .spec-card .spec-value {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .spec-card .spec-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-top: 5px;
+      padding-top: 5px;
+      border-top: 1px solid rgba(42, 58, 82, 0.3);
+    }
+
+    .brand-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .brand-chip {
+      padding: 5px 12px;
+      border-radius: 100px;
+      border: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* ============ KELEBIHAN & KEKURANGAN ============ */
+    .proscons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .proscons-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .proscons-title.pros { color: var(--accent-green); }
+    .proscons-title.cons { color: var(--accent-red); }
+
+    .proscons-list {
+      list-style: none;
+    }
+
+    .proscons-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .pc-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .pc-plus {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent-green);
+    }
+
+    .pc-minus {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--accent-red);
+    }
+
+    .function-list {
+      list-style: none;
+    }
+
+    .function-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(42, 58, 82, 0.3);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .function-list li:last-child {
+      border-bottom: none;
+    }
+
+    .function-list .fn-bullet {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .layer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .comparison-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .device-catalog {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        height: auto;
+        overflow: visible;
+      }
+      .device-list {
+        max-height: 260px;
+      }
+      .device-detail {
+        overflow-y: visible;
+      }
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+      .proscons-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .device-tabs {
+        padding: 0 1.25rem;
+        gap: 4px 14px;
+      }
+      .tab-panel {
+        padding: 1.5rem 1.25rem 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../../index.html" class="navbar-brand">
+      <div class="navbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <div class="navbar-title">
+        <div class="navbar-title-main">Lab Maya <span>Jaringan Komputer</span></div>
+        <div class="navbar-title-sub">Informatika &middot; Kelas XI &middot; Fase F</div>
+      </div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="../../index.html">Beranda</a></li>
+      <li><a href="capaian-pembelajaran.html">CP &amp; TP</a></li>
+      <li><a href="perangkat.html" class="active">Perangkat</a></li>
+      <li><a href="topologi.html">Topologi</a></li>
+      <li><a href="ip-addressing.html">IP Addressing</a></li>
+      <li><a href="simulasi-paket.html">Simulasi OSI</a></li>
+      <li><a href="evaluasi.html">Evaluasi</a></li>
+      <li class="navbar-profile" id="navbarProfile">
+        <button class="profile-chip" id="profileChipBtn" type="button">
+          <span class="profile-avatar" id="profileAvatar">S</span>
+          <span class="profile-chip-name" id="profileChipName">Siswa</span>
+          <svg class="profile-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name" id="profileDropdownName">Siswa</div>
+          <div class="profile-dropdown-school" id="profileDropdownSchool">-</div>
+          <div class="profile-dropdown-divider"></div>
+          <a href="../../index.html" class="profile-dropdown-exit" onclick="sessionStorage.clear()" title="Kembali ke halaman cover">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Keluar
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="device-catalog">
+    <!-- Sidebar - Device List (scrolls independently) -->
+    <div class="device-list-panel">
+      <div style="margin-bottom:1rem;flex-shrink:0;">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">Perangkat Jaringan</h2>
+        <p style="font-size:0.8rem;color:var(--text-muted);">Klik perangkat untuk melihat detail</p>
+      </div>
+      <div class="device-list" id="deviceList"></div>
+    </div>
+
+    <!-- Main - Device Detail -->
+    <div class="device-detail" id="deviceDetail"></div>
+  </div>
+
+  <!-- Petunjuk Penggunaan Modal -->
+  <div class="help-modal-overlay" id="helpModalOverlay">
+    <div class="help-modal">
+      <div class="help-modal-header">
+        <h3>Cara Menggunakan Ensiklopedia Perangkat</h3>
+        <button class="help-modal-close" id="helpModalClose">&times;</button>
+      </div>
+      <div class="help-modal-body">
+        <ol>
+          <li><strong>Pilih Perangkat</strong> — klik salah satu perangkat di daftar sebelah kiri untuk melihat detail lengkapnya.</li>
+          <li><strong>Deskripsi &amp; Layer OSI</strong> — baca fungsi, deskripsi, dan posisi layer OSI perangkat tersebut di panel kanan.</li>
+          <li><strong>Fungsi Utama</strong> — pelajari daftar fungsi utama tiap perangkat pada bagian bawah panel.</li>
+          <li><strong>Tabel Perbandingan</strong> — gulir ke bawah untuk membandingkan spesifikasi antar-perangkat.</li>
+        </ol>
+      </div>
+      <div class="help-modal-footer">
+        <button class="btn btn-primary" id="helpModalStart">Mulai</button>
+      </div>
+    </div>
+  </div>
+  <button class="help-fab" id="helpFabBtn" title="Bantuan">?</button>
+
+  <script src="../js/sound-fx.js?v=2"></script>
+  <script src="../js/profile-menu.js?v=2"></script>
+  <script src="../js/help-modal.js"></script>
+  <script src="../js/perangkat.js"></script>
+  <script>initHelpModal('perangkat');</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250">
+<defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#334155"/><stop offset="100%" stop-color="#0F172A"/></linearGradient></defs>
+<rect width="200" height="250" rx="16" fill="url(#bg)"/>
+<circle cx="100" cy="90" r="50" fill="rgba(255,255,255,0.06)"/>
+<circle cx="100" cy="78" r="30" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+<path d="M55,158 C55,128 75,115 100,115 C125,115 145,128 145,158" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+<rect x="35" y="195" width="130" height="30" rx="15" fill="rgba(37,99,235,0.4)"/>
+<text x="100" y="215" font-size="13" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Segoe UI,sans-serif" font-weight="700">Guru Informatika</text>
+</svg>

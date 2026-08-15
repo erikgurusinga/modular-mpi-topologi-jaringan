@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    // Onboarding guard: this page requires the cover-page form (nama +
+    // sekolah) to have been completed this session. Without it, bounce
+    // back to the cover instead of showing module content to an
+    // unidentified visitor (e.g. someone who bookmarked/typed this URL,
+    // or reached it via a cover-page shortcut like the CP & TP modal).
+    if (sessionStorage.getItem('labmaya_entered') !== '1') {
+      location.replace('../../index.html');
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Topologi Jaringan - Lab Maya</title>
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Simulation toast messages (place/connect/undo/ping/gangguan, etc.)
+       are pinned to the bottom-center of the workspace canvas on this page
+       specifically — not the shared bottom-right viewport corner used by
+       .toast on other pages — so they stay anchored to the work area no
+       matter how wide the sidebar/right panel are. */
+    #workspaceArea .toast {
+      position: absolute;
+      left: 50%;
+      right: auto;
+      bottom: 44px;
+      transform: translate(-50%, 100px);
+    }
+
+    #workspaceArea .toast.show {
+      transform: translate(-50%, 0);
+    }
+
+    /* A prominent (but not "active mode") accent for the one-shot Analisis
+       Jaringan action, so it stands out from the mode-toggle buttons
+       without looking like a persistent mode itself. */
+    .toolbar-btn.primary-hint {
+      color: var(--accent-blue);
+    }
+
+    .toolbar-btn.primary-hint:hover {
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--text-primary);
+    }
+
+    /* ============ ANALISIS JARINGAN CARD ============
+       Bottom-center overlay, persistent (unlike the auto-fading toast)
+       until closed or until the topology changes underneath it. Capped to
+       a max-height with its own internal scroll so long content never
+       forces the workspace itself to scroll (#workspaceArea/.workspace
+       stay overflow:hidden). */
+    .network-analysis-card {
+      position: absolute;
+      left: 50%;
+      bottom: 44px;
+      transform: translate(-50%, 16px);
+      width: min(560px, calc(100% - 32px));
+      /* Capped well short of the full workspace height on purpose — this
+         sits *over* the canvas, so if it grows too tall (long Kelebihan/
+         Kekurangan/Solusi content) it starts covering devices underneath
+         and swallowing clicks meant for them. Long content scrolls inside
+         the card instead of the card growing to cover the canvas. */
+      max-height: min(360px, calc(100% - 140px));
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 1.25rem 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 20;
+    }
+
+    .network-analysis-card.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+    }
+
+    .network-analysis-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .network-analysis-close:hover {
+      color: var(--text-primary);
+    }
+
+    /* ============ KELEBIHAN & KEKURANGAN (shared pattern, page-scoped
+       here same as on Perangkat/IP Addressing) ============ */
+    .proscons-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .proscons-title.pros { color: var(--accent-green); }
+    .proscons-title.cons { color: var(--accent-red); }
+
+    .proscons-list {
+      list-style: none;
+    }
+
+    .proscons-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .pc-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .pc-plus {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent-green);
+    }
+
+    .pc-minus {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--accent-red);
+    }
+
+    .proscons-list-solusi li {
+      padding-bottom: 10px;
+    }
+
+    .solusi-line {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+    }
+
+    @media (max-width: 768px) {
+      .network-analysis-card {
+        padding: 1rem 1.25rem;
+        max-height: min(300px, calc(100% - 100px));
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="../../index.html" class="navbar-brand">
+      <div class="navbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <div class="navbar-title">
+        <div class="navbar-title-main">Lab Maya <span>Jaringan Komputer</span></div>
+        <div class="navbar-title-sub">Informatika &middot; Kelas XI &middot; Fase F</div>
+      </div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="../../index.html">Beranda</a></li>
+      <li><a href="capaian-pembelajaran.html">CP &amp; TP</a></li>
+      <li><a href="perangkat.html">Perangkat</a></li>
+      <li><a href="topologi.html" class="active">Topologi</a></li>
+      <li><a href="ip-addressing.html">IP Addressing</a></li>
+      <li><a href="simulasi-paket.html">Simulasi OSI</a></li>
+      <li><a href="evaluasi.html">Evaluasi</a></li>
+      <li>
+        <button class="navbar-sound-btn" data-sound-toggle type="button" aria-label="Aktifkan/matikan suara">
+          <svg class="icon-sound-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg class="icon-sound-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>
+        </button>
+      </li>
+      <li class="navbar-profile" id="navbarProfile">
+        <button class="profile-chip" id="profileChipBtn" type="button">
+          <span class="profile-avatar" id="profileAvatar">S</span>
+          <span class="profile-chip-name" id="profileChipName">Siswa</span>
+          <svg class="profile-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-name" id="profileDropdownName">Siswa</div>
+          <div class="profile-dropdown-school" id="profileDropdownSchool">-</div>
+          <div class="profile-dropdown-divider"></div>
+          <a href="../../index.html" class="profile-dropdown-exit" onclick="sessionStorage.clear()" title="Kembali ke halaman cover">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Keluar
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Page Layout -->
+  <div class="page-container">
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Perangkat Jaringan</h3>
+        <p style="font-size:0.75rem; color:var(--text-muted);">Klik perangkat, lalu klik pada canvas untuk menempatkannya</p>
+      </div>
+      <div class="sidebar-content">
+        <div class="device-grid" id="devicePalette">
+          <div class="device-item" data-type="pc" title="Personal Computer">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="6" y="4" width="20" height="16" rx="2" stroke="#3b82f6" stroke-width="2"/>
+              <rect x="8" y="6" width="16" height="12" rx="1" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="1"/>
+              <line x1="16" y1="20" x2="16" y2="24" stroke="#3b82f6" stroke-width="2"/>
+              <line x1="10" y1="24" x2="22" y2="24" stroke="#3b82f6" stroke-width="2"/>
+            </svg>
+            <span>PC</span>
+          </div>
+          <div class="device-item" data-type="laptop" title="Laptop">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="7" y="6" width="18" height="13" rx="2" stroke="#06b6d4" stroke-width="2"/>
+              <rect x="9" y="8" width="14" height="9" rx="1" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" stroke-width="1"/>
+              <path d="M4 23h24l-2 3H6l-2-3z" stroke="#06b6d4" stroke-width="2" fill="rgba(6,182,212,0.05)"/>
+            </svg>
+            <span>Laptop</span>
+          </div>
+          <div class="device-item" data-type="switch" title="Switch">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="4" y="10" width="24" height="12" rx="2" stroke="#22c55e" stroke-width="2" fill="rgba(34,197,94,0.05)"/>
+              <circle cx="10" cy="16" r="2" fill="#22c55e"/>
+              <circle cx="16" cy="16" r="2" fill="#22c55e"/>
+              <circle cx="22" cy="16" r="2" fill="#22c55e"/>
+              <line x1="10" y1="10" x2="10" y2="12" stroke="#22c55e" stroke-width="1.5"/>
+              <line x1="16" y1="10" x2="16" y2="12" stroke="#22c55e" stroke-width="1.5"/>
+              <line x1="22" y1="10" x2="22" y2="12" stroke="#22c55e" stroke-width="1.5"/>
+            </svg>
+            <span>Switch</span>
+          </div>
+          <div class="device-item" data-type="router" title="Router">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="10" stroke="#f97316" stroke-width="2" fill="rgba(249,115,22,0.05)"/>
+              <path d="M16 10v4l3-2M16 14l-3-2" stroke="#f97316" stroke-width="2"/>
+              <path d="M10 16h4l-2 3M14 16l-2-3" stroke="#f97316" stroke-width="2"/>
+              <path d="M22 16h-4l2-3M18 16l2 3" stroke="#f97316" stroke-width="2"/>
+              <path d="M16 22v-4l-3 2M16 18l3 2" stroke="#f97316" stroke-width="2"/>
+            </svg>
+            <span>Router</span>
+          </div>
+          <div class="device-item" data-type="server" title="Server">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="8" y="3" width="16" height="26" rx="2" stroke="#a855f7" stroke-width="2" fill="rgba(168,85,247,0.05)"/>
+              <line x1="8" y1="11" x2="24" y2="11" stroke="#a855f7" stroke-width="1.5"/>
+              <line x1="8" y1="19" x2="24" y2="19" stroke="#a855f7" stroke-width="1.5"/>
+              <circle cx="12" cy="7" r="1.5" fill="#a855f7"/>
+              <circle cx="12" cy="15" r="1.5" fill="#a855f7"/>
+              <circle cx="12" cy="23" r="1.5" fill="#a855f7"/>
+              <line x1="16" y1="7" x2="20" y2="7" stroke="#a855f7" stroke-width="1.5"/>
+              <line x1="16" y1="15" x2="20" y2="15" stroke="#a855f7" stroke-width="1.5"/>
+              <line x1="16" y1="23" x2="20" y2="23" stroke="#a855f7" stroke-width="1.5"/>
+            </svg>
+            <span>Server</span>
+          </div>
+          <div class="device-item" data-type="access_point" title="Access Point">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path d="M16 18v8" stroke="#eab308" stroke-width="2"/>
+              <line x1="12" y1="26" x2="20" y2="26" stroke="#eab308" stroke-width="2"/>
+              <circle cx="16" cy="16" r="3" stroke="#eab308" stroke-width="2" fill="rgba(234,179,8,0.1)"/>
+              <path d="M10 12a8.5 8.5 0 0 1 12 0" stroke="#eab308" stroke-width="2" fill="none"/>
+              <path d="M7 9a13 13 0 0 1 18 0" stroke="#eab308" stroke-width="1.5" fill="none" opacity="0.5"/>
+            </svg>
+            <span>Access Point</span>
+          </div>
+          <div class="device-item" data-type="smartphone" title="Smartphone">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="10" y="4" width="12" height="24" rx="2" stroke="#14b8a6" stroke-width="2" fill="rgba(20,184,166,0.05)"/>
+              <rect x="11.5" y="7" width="9" height="17" rx="0.5" fill="rgba(20,184,166,0.1)" stroke="#14b8a6" stroke-width="1"/>
+              <circle cx="16" cy="25.5" r="1" fill="#14b8a6"/>
+            </svg>
+            <span>Smartphone</span>
+          </div>
+          <div class="device-item" data-type="bridge" title="Bridge">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path d="M8 16Q16 5 24 16" stroke="#64748b" stroke-width="2" fill="none"/>
+              <rect x="3" y="16" width="9" height="9" rx="1.5" stroke="#64748b" stroke-width="2" fill="rgba(100,116,139,0.05)"/>
+              <rect x="20" y="16" width="9" height="9" rx="1.5" stroke="#64748b" stroke-width="2" fill="rgba(100,116,139,0.05)"/>
+              <circle cx="7.5" cy="21" r="1.3" fill="#64748b"/>
+              <circle cx="24.5" cy="21" r="1.3" fill="#64748b"/>
+            </svg>
+            <span>Bridge</span>
+          </div>
+          <div class="device-item" data-type="modem" title="Modem">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <line x1="23" y1="12" x2="23" y2="5" stroke="#6366f1" stroke-width="2"/>
+              <circle cx="23" cy="4" r="1.5" fill="#6366f1"/>
+              <rect x="5" y="12" width="22" height="10" rx="2" stroke="#6366f1" stroke-width="2" fill="rgba(99,102,241,0.05)"/>
+              <circle cx="10" cy="17" r="1.4" fill="#6366f1"/>
+              <circle cx="14" cy="17" r="1.4" fill="#6366f1"/>
+              <circle cx="18" cy="17" r="1.4" fill="#6366f1"/>
+              <rect x="9" y="22" width="4" height="3" fill="#6366f1"/>
+            </svg>
+            <span>Modem</span>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <div class="sidebar-header" style="padding:0 0 1rem;">
+            <h3>Contoh Topologi</h3>
+          </div>
+          <button class="example-btn" onclick="loadExample('star')">
+            <div class="example-icon">&#9733;</div>
+            <div class="example-text">
+              <strong>Star (Bintang)</strong>
+              <span>Perangkat terhubung ke satu pusat</span>
+            </div>
+          </button>
+          <button class="example-btn" onclick="loadExample('bus')">
+            <div class="example-icon">&#8212;</div>
+            <div class="example-text">
+              <strong>Bus</strong>
+              <span>Satu jalur kabel utama</span>
+            </div>
+          </button>
+          <button class="example-btn" onclick="loadExample('ring')">
+            <div class="example-icon">&#9711;</div>
+            <div class="example-text">
+              <strong>Ring (Cincin)</strong>
+              <span>Perangkat terhubung membentuk lingkaran</span>
+            </div>
+          </button>
+          <button class="example-btn" onclick="loadExample('mesh')">
+            <div class="example-icon">&#9670;</div>
+            <div class="example-text">
+              <strong>Mesh</strong>
+              <span>Setiap perangkat saling terhubung</span>
+            </div>
+          </button>
+          <button class="example-btn" onclick="loadExample('tree')">
+            <div class="example-icon">&#9651;</div>
+            <div class="example-text">
+              <strong>Tree (Pohon)</strong>
+              <span>Hierarki bertingkat</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Canvas Workspace -->
+    <div class="workspace grid-bg" id="workspaceArea">
+      <canvas id="networkCanvas"></canvas>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button class="toolbar-btn active" id="btnSelect" onclick="setMode('select')" title="Mode Pilih">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+          </svg>
+          Pilih
+        </button>
+        <button class="toolbar-btn" id="btnPlace" onclick="setMode('place')" title="Mode Tempatkan">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Tambah
+        </button>
+        <button class="toolbar-btn" id="btnConnect" onclick="setMode('connect')" title="Mode Hubungkan">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="19" x2="19" y2="5"/>
+            <circle cx="5" cy="19" r="3"/>
+            <circle cx="19" cy="5" r="3"/>
+          </svg>
+          Hubungkan
+        </button>
+        <div class="toolbar-divider"></div>
+        <button class="toolbar-btn" id="btnPing" onclick="setMode('ping')" title="Mode Uji Koneksi">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Uji Koneksi
+        </button>
+        <button class="toolbar-btn" id="btnFault" onclick="setMode('fault')" title="Mode Simulasi Gangguan">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Gangguan
+        </button>
+        <div class="toolbar-divider"></div>
+        <button class="toolbar-btn" id="btnDelete" onclick="setMode('delete')" title="Mode Hapus">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Hapus
+        </button>
+        <button class="toolbar-btn" id="btnUndo" onclick="undo()" title="Undo (Ctrl+Z)" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 14 4 9 9 4"/>
+            <path d="M4 9h11a5 5 0 0 1 0 10h-1"/>
+          </svg>
+          Undo
+        </button>
+        <div class="toolbar-divider"></div>
+        <button class="toolbar-btn primary-hint" onclick="runNetworkAnalysis()" title="Analisis kelebihan, kekurangan & solusi topologi ini">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M3 3v18h18"/>
+            <path d="M7 14l4-4 3 3 5-6"/>
+          </svg>
+          Analisis Jaringan
+        </button>
+        <div class="toolbar-divider"></div>
+        <button class="toolbar-btn danger" onclick="clearCanvas()" title="Bersihkan Semua">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Bersihkan
+        </button>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="btnZoomOut" onclick="zoomOut()" title="Perkecil (Ctrl+-)">&minus;</button>
+        <button class="zoom-btn zoom-reset" id="btnZoomReset" onclick="resetZoom()" title="Reset ke 100%">100%</button>
+        <button class="zoom-btn" id="btnZoomIn" onclick="zoomIn()" title="Perbesar (Ctrl++)">+</button>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-dot"></span>
+          <span>Mode: <strong id="statusMode">Pilih</strong></span>
+        </div>
+        <div class="status-item">
+          Perangkat: <strong id="statusDevices">0</strong>
+        </div>
+        <div class="status-item">
+          Koneksi: <strong id="statusConnections">0</strong>
+        </div>
+        <div class="status-item" id="statusCoords">
+          X: 0, Y: 0
+        </div>
+      </div>
+
+      <!-- Analisis Jaringan result card: shown on demand by the toolbar
+           button, stays open (unlike the toast) until closed or until the
+           topology changes (hideNetworkAnalysis() from any mutation). -->
+      <div class="network-analysis-card" id="networkAnalysisCard"></div>
+
+      <!-- Toast: pinned to the bottom-center of the workspace itself (not
+           the whole viewport), so it never drifts off to a corner of the
+           screen regardless of sidebar/panel width. -->
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- Right Panel -->
+    <aside class="panel-right">
+      <div class="panel-section">
+        <h4>Informasi Perangkat</h4>
+        <div id="deviceInfo">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <p>Klik perangkat pada canvas untuk melihat detailnya</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h4>Hasil Uji Koneksi</h4>
+        <div id="pingResult">
+          <div class="empty-state">
+            <p style="font-size:0.8rem;">Gunakan mode Uji Koneksi untuk menguji jalur antar perangkat</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h4>Analisis Topologi</h4>
+        <div id="topologyAnalysis">
+          <div class="empty-state">
+            <p style="font-size:0.8rem;">Tambahkan perangkat dan hubungkan untuk melihat analisis topologi</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h4>Panduan Topologi</h4>
+        <div id="topologyGuide" style="font-size:0.8rem; color:var(--text-secondary); line-height:1.6;">
+          <p><strong style="color:var(--text-primary);">Star:</strong> Semua node terhubung ke satu node pusat (switch/hub). Mudah dikelola, jika pusat mati semua terputus.</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-primary);">Bus:</strong> Semua node terhubung ke satu kabel utama (backbone). Sederhana tapi rentan collision.</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-primary);">Ring:</strong> Setiap node terhubung ke 2 node tetangga membentuk lingkaran. Data mengalir satu arah.</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-primary);">Mesh:</strong> Setiap node saling terhubung langsung. Sangat redundan tapi mahal.</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-primary);">Tree:</strong> Kombinasi star bertingkat dengan hierarki. Cocok untuk jaringan besar.</p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Petunjuk Penggunaan Modal -->
+  <div class="help-modal-overlay" id="helpModalOverlay">
+    <div class="help-modal">
+      <div class="help-modal-header">
+        <h3>Cara Menggunakan Simulator Topologi</h3>
+        <button class="help-modal-close" id="helpModalClose">&times;</button>
+      </div>
+      <div class="help-modal-body">
+        <ol>
+          <li><strong>Tambah perangkat</strong> — klik perangkat di sidebar kiri, lalu klik pada canvas untuk menempatkannya.</li>
+          <li><strong>Hubungkan</strong> — pilih mode Hubungkan, lalu klik dua perangkat berurutan untuk menyambungkan kabel di antaranya. Koneksi yang melibatkan Smartphone, atau Access Point ke PC/Laptop/Smartphone, otomatis digambar sebagai jalur WiFi putus-putus — bukan kabel — sesuai cara kerja perangkat itu di dunia nyata.</li>
+          <li><strong>Lihat detail</strong> — klik perangkat pada canvas (mode Pilih) untuk melihat detailnya di panel kanan.</li>
+          <li><strong>Hapus</strong> — gunakan mode Hapus untuk menghapus perangkat/koneksi tertentu, atau tombol Bersihkan untuk mengulang dari awal.</li>
+          <li><strong>Undo</strong> — salah taruh, salah hapus, atau salah sambung? Klik tombol Undo (atau tekan Ctrl+Z) untuk membatalkan aksi terakhir.</li>
+          <li><strong>Zoom</strong> — gunakan tombol +/− di pojok kanan bawah canvas (atau scroll mouse / Ctrl dan +/−) untuk memperbesar/memperkecil area kerja, misalnya saat topologi sudah cukup ramai.</li>
+          <li><strong>Geser (Pan)</strong> — seret area kosong pada canvas (mode Pilih) untuk menggeser tampilan ke kiri/kanan/atas/bawah, berguna saat sudah di-zoom dan sebagian perangkat tidak terlihat. Klik "100%" di kontrol zoom untuk mengembalikan tampilan ke posisi &amp; ukuran semula.</li>
+          <li><strong>Alamat IP</strong> — setiap perangkat otomatis dapat IP (terlihat di bawah namanya di canvas). Klik perangkat lalu ubah IP/Prefix-nya di panel kanan untuk mengatur subnet sendiri.</li>
+          <li><strong>Uji Koneksi</strong> — pilih mode ini, klik perangkat sumber lalu perangkat tujuan. Sistem memeriksa jalur fisik <em>dan</em> apakah keduanya satu subnet (kalau beda subnet, wajib lewat Router), lalu menganimasikan paket bergerak melewatinya.</li>
+          <li><strong>Simulasi Gangguan</strong> — pilih mode ini untuk mematikan perangkat atau memutus koneksi (klik lagi untuk menyalakan/menyambung kembali), lalu coba Uji Koneksi lagi untuk melihat ketahanan topologi terhadap gangguan.</li>
+          <li><strong>Analisis Topologi</strong> — panel di sidebar kanan ini otomatis menampilkan jenis topologi yang terdeteksi (Star/Bus/Ring/Mesh/Tree/dll) beserta statistiknya (jumlah node, link, degree, node pusat) dan status jaringan, dan ter-update sendiri setiap kali perangkat/koneksi ditambah, dihapus, atau di-undo.</li>
+          <li><strong>Analisis Jaringan</strong> — klik tombol ini untuk melihat kelebihan, kekurangan, dan solusi dari topologi yang sedang dibangun, <em>ditambah</em> kondisi jaringan yang sedang berjalan saat ini: perangkat mana yang mati, koneksi mana yang terputus (dari mode Simulasi Gangguan), dan apakah jaringan masih tetap saling terhubung meski begitu atau justru sudah terbelah jadi beberapa kelompok terpisah. Hasilnya muncul di tengah-bawah lembar kerja; menyalakan/mematikan perangkat atau memutus/menyambung koneksi lagi otomatis menutup hasil ini karena kondisinya sudah berubah.</li>
+          <li><strong>Contoh Topologi</strong> — klik salah satu contoh di sidebar (Star, Bus, Ring, Mesh, Tree) untuk memuatnya secara otomatis.</li>
+        </ol>
+      </div>
+      <div class="help-modal-footer">
+        <button class="btn btn-primary" id="helpModalStart">Mulai</button>
+      </div>
+    </div>
+  </div>
+  <button class="help-fab" id="helpFabBtn" title="Bantuan">?</button>
+
+  <script src="../js/sound-fx.js?v=2"></script>
+  <script src="../js/profile-menu.js?v=2"></script>
+  <script src="../js/help-modal.js"></script>
+  <script src="../js/topologi.js"></script>
+  <script>initHelpModal('topologi');</script>
+</body>
+</html>
